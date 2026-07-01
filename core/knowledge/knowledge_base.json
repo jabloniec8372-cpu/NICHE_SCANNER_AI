@@ -1,0 +1,76 @@
+{
+  "animals": {
+    "dogs": [
+      "dog",
+      "dogs",
+      "puppy",
+      "puppies",
+      "german shepherd",
+      "golden retriever",
+      "labrador",
+      "husky",
+      "beagle",
+      "rottweiler",
+      "doberman",
+      "chihuahua"
+    ],
+    "cats": [
+      "cat",
+      "cats",
+      "kitten",
+      "kittens",
+      "maine coon",
+      "siamese",
+      "persian",
+      "ragdoll",
+      "bengal"
+    ]
+  },
+  "family": {
+    "parents": [
+      "mom",
+      "dad",
+      "grandma",
+      "grandpa",
+      "mother",
+      "father"
+    ]
+  },
+  "jobs": {
+    "medical": [
+      "nurse",
+      "doctor",
+      "paramedic",
+      "dentist"
+    ],
+    "education": [
+      "teacher",
+      "professor",
+      "student"
+    ]
+  },
+  "hobbies": {
+    "outdoor": [
+      "camping",
+      "fishing",
+      "hiking",
+      "hunting"
+    ],
+    "sports": [
+      "golf",
+      "running",
+      "cycling",
+      "basketball",
+      "football"
+    ]
+  },
+  "holidays": {
+    "seasonal": [
+      "christmas",
+      "halloween",
+      "easter",
+      "valentine",
+      "thanksgiving"
+    ]
+  }
+}
