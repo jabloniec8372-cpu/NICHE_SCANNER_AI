@@ -2,7 +2,7 @@
 
 NicheScanner AI is a small terminal-based Python application for testing print-on-demand niche ideas. It stores product ideas in SQLite, scores them with a simple trend score, analyzes title keywords, classifies product titles into Niche DNA, and exports CSV reports.
 
-Current version: v0.9
+Current version: v0.9.1
 
 ## Features
 
@@ -22,6 +22,8 @@ From the project root:
 ```powershell
 python core\main.py
 ```
+
+The app also resolves its database, report, and knowledge-base files from the project directory, so it can be launched from another working directory by passing the full path to `core\main.py`.
 
 ## Project Structure
 
@@ -52,8 +54,15 @@ reports/
 - CSV export now includes Niche DNA columns.
 - Mock keyword scanning now returns varied product types and platforms.
 
+## v0.9.1 Notes
+
+- Fixed database, report, and knowledge-base paths so the app works from the project root and other working directories.
+- Added validation for empty keyword scans.
+- Scan imports now report the real number of newly inserted products.
+- Added scoring model documentation in `core/scoring.py`.
+
 ## Limitations
 
 - The scanner uses mock data only.
 - No live marketplace scraping or API integration is included.
-- The database schema is unchanged in v0.9.
+- The database schema is unchanged in v0.9.1.

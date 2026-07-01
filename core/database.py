@@ -1,7 +1,9 @@
-import sqlite3
+﻿import sqlite3
+from pathlib import Path
 
 
-DATABASE = "data/nichescanner.db"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DATABASE = PROJECT_ROOT / "data" / "nichescanner.db"
 
 
 def create_database():
@@ -31,8 +33,12 @@ def add_product(title, platform, price, reviews):
     VALUES (?, ?, ?, ?)
     """, (title, platform, price, reviews))
 
+    inserted = cursor.rowcount > 0
+
     connection.commit()
     connection.close()
+
+    return inserted
 
 
 def get_products():

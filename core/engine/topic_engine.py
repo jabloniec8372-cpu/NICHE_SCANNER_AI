@@ -1,7 +1,9 @@
-import json
+﻿import json
+from pathlib import Path
 
 
-KNOWLEDGE_BASE_PATH = "core/knowledge/knowledge_base.json"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+KNOWLEDGE_BASE_PATH = PROJECT_ROOT / "core" / "knowledge" / "knowledge_base.json"
 
 
 def load_knowledge_base():

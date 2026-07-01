@@ -1,4 +1,10 @@
 ﻿def calculate_score(price, reviews):
+    """Calculate a simple trend score from review count and product price.
+
+    Reviews contribute up to 60 points. Products with more reviews receive a
+    stronger demand signal. Price contributes up to 30 points, with the current
+    preferred print-on-demand range set to $15-$30.
+    """
     score = 0
 
     if reviews >= 1000:

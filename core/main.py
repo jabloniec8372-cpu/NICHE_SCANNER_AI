@@ -11,7 +11,7 @@ from scoring import calculate_score
 
 def show_menu():
     print("===================================")
-    print("      NICHE SCANNER AI v0.9")
+    print("     NICHE SCANNER AI v0.9.1")
     print("===================================")
     print()
     print("1. Import sample products")
@@ -40,23 +40,33 @@ def import_products():
 
 
 def scan_keyword_menu():
-    keyword = input("Enter keyword: ")
+    keyword = input("Enter keyword: ").strip()
+
+    if not keyword:
+        print()
+        print("[ERROR] Keyword cannot be empty.")
+        print()
+        return
 
     print()
     print(f"[SCAN] Scanning keyword: {keyword}")
     print()
 
     products = scan_keyword(keyword)
+    imported_count = 0
 
     for product in products:
-        add_product(
+        was_inserted = add_product(
             product["title"],
             product["platform"],
             product["price"],
             product["reviews"]
         )
 
-    print(f"[OK] Imported {len(products)} products.")
+        if was_inserted:
+            imported_count += 1
+
+    print(f"[OK] Imported {imported_count} new products.")
     print()
 
 
