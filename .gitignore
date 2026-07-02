@@ -4,3 +4,4 @@ data/*.db
 reports/*.csv
 .DS_Store
 .vscode/settings.json
+reports/
