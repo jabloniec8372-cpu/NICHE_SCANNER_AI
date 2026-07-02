@@ -1,47 +1,83 @@
-﻿# NicheScanner AI Roadmap
+# NicheScanner AI Roadmap
 
-This roadmap describes the planned direction for NicheScanner AI. It does not mean every item is already implemented.
+This roadmap describes the planned direction for NicheScanner AI. Completed sections describe what is already in the project. Future sections describe possible next work and should stay small, safe, and beginner-friendly.
 
-## v0.9 - GitHub Polish
+## Completed Releases
+
+### v0.9 - GitHub Polish - Completed
 
 Focus: make the project clear, beginner-friendly, and presentable on GitHub.
 
-- Improve README documentation.
-- Explain current features and limitations.
-- Add project structure documentation.
-- Add Windows installation and run instructions.
-- Add a clear roadmap.
-- Keep the app offline and dependency-free.
+- Improved README documentation.
+- Explained current features and limitations.
+- Added project structure documentation.
+- Added Windows installation and run instructions.
+- Added a clear roadmap.
+- Kept the app offline and dependency-free.
 
-## v1.0 - Real Marketplace Data Research
+### v0.9.1 - Stability Polish - Completed
 
-Focus: move beyond mock data while keeping the app safe and maintainable.
+Focus: make the existing terminal app easier to run from different working directories.
 
-- Research options for real marketplace data sources.
-- Prefer official APIs or approved data sources where possible.
-- Add clear configuration for any required credentials.
-- Preserve the existing mock scanner for local testing.
-- Avoid scraping unless explicitly approved and legally appropriate.
+- Fixed project-root path handling for database, reports, and knowledge files.
+- Added validation for empty keyword scans.
+- Improved import feedback for newly inserted products.
+- Added clearer scoring documentation.
 
-## v1.1 - Scoring System
+### v1.2 - Rating, Competition, And Opportunities - Completed
 
-Focus: improve the trend score so it gives more useful product research signals.
+Focus: improve how users evaluate stored product research.
 
-- Review the current price and review-count thresholds.
-- Add clearer scoring explanations.
-- Consider additional signals such as competition level, keyword frequency, or product type.
+- Added product rating support.
+- Added safe SQLite migration for older databases that do not have the `rating` column.
+- Added rating score to the scoring model.
+- Added competition labels based on review count.
+- Added opportunity labels to scoring output.
+- Added Top Niches menu flow.
+- Added Hidden Opportunities workflow.
+- Expanded CSV export with rating, rating score, competition, and opportunity fields.
+
+### v1.2.1 - GitHub Polish And Documentation - Completed
+
+Focus: document the current v1.2 codebase accurately before future feature work.
+
+- Updated README to describe current features and menu behavior.
+- Updated project structure documentation.
+- Updated roadmap so future work starts from v1.3.
+- Expanded development rules in `AGENTS.md`.
+- Kept this release documentation-only.
+
+## Future Roadmap
+
+### v1.3 - CSV Import For Product Research Files
+
+Focus: let users import their own product research data.
+
+- Add CSV import for product files.
+- Validate required columns before importing.
+- Keep compatibility with the current SQLite database.
+- Provide clear error messages for missing or invalid data.
+- Avoid external dependencies.
+
+### v1.4 - Dashboard Or Richer Reporting
+
+Focus: improve how users review research results.
+
+- Explore a simple dashboard or richer terminal report.
+- Add summary statistics for products, scores, ratings, and competition.
+- Make reports easier to scan and compare.
+- Preserve the current CLI menu.
+
+### v1.5 - Better Trend And Competition Scoring
+
+Focus: improve scoring quality while keeping the rules transparent.
+
+- Review price, review-count, and rating thresholds.
+- Improve competition scoring beyond simple review-count labels.
+- Consider keyword frequency or product type as additional signals.
 - Keep scoring logic reusable and easy to test.
 
-## v1.2 - Dashboard And Export Improvements
-
-Focus: improve how users review and export research results.
-
-- Improve CSV export formatting and file naming.
-- Consider adding summary statistics.
-- Explore a simple dashboard or report view.
-- Make exported reports easier to use in spreadsheets.
-
-## v2.0 - Optional AI-Assisted Niche Recommendations
+### v2.0 - Optional AI-Assisted Niche Recommendations
 
 Focus: optionally add AI-assisted suggestions after the core research workflow is stable.
 
