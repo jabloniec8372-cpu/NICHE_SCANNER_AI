@@ -2,6 +2,7 @@ from database import create_database
 from database import add_product
 from database import get_products
 from database import clear_products
+from csv_importer import import_products_from_csv
 from market_scanner import scan_keyword
 from report_exporter import export_products_to_csv
 from keyword_analyzer import analyze_keywords
@@ -12,19 +13,20 @@ from opportunity_finder import find_hidden_opportunities
 
 def show_menu():
     print("===================================")
-    print("     NICHE SCANNER AI v1.2")
+    print("     NICHE SCANNER AI v1.3")
     print("===================================")
     print()
     print("1. Import sample products")
-    print("2. Show report")
-    print("3. Scan keyword")
-    print("4. Clear products")
-    print("5. Export CSV report")
-    print("6. Show keyword trends")
-    print("7. Show Niche DNA")
-    print("8. Show Top Niches")
-    print("9. Hidden Opportunities")
-    print("10. Exit")
+    print("2. Import products from CSV")
+    print("3. Show report")
+    print("4. Scan keyword")
+    print("5. Clear products")
+    print("6. Export CSV report")
+    print("7. Show keyword trends")
+    print("8. Show Niche DNA")
+    print("9. Show Top Niches")
+    print("10. Hidden Opportunities")
+    print("11. Exit")
     print()
 
     return input("Choose option: ")
@@ -39,6 +41,34 @@ def import_products():
 
     print()
     print("[OK] Sample products imported.")
+    print()
+
+
+def import_products_from_csv_menu():
+    file_path = input("Enter CSV file path: ").strip()
+
+    if not file_path:
+        print()
+        print("[ERROR] CSV file path cannot be empty.")
+        print()
+        return
+
+    products = import_products_from_csv(file_path)
+    imported_count = 0
+
+    for product in products:
+        was_inserted = add_product(
+            product["title"],
+            product["platform"],
+            product["price"],
+            product["reviews"],
+            product["rating"]
+        )
+
+        if was_inserted:
+            imported_count += 1
+
+    print(f"[OK] Imported {imported_count} new products from CSV.")
     print()
 
 
@@ -272,30 +302,33 @@ def main():
             import_products()
 
         elif choice == "2":
-            show_report()
+            import_products_from_csv_menu()
 
         elif choice == "3":
-            scan_keyword_menu()
+            show_report()
 
         elif choice == "4":
-            clear_products_menu()
+            scan_keyword_menu()
 
         elif choice == "5":
-            export_report_menu()
+            clear_products_menu()
 
         elif choice == "6":
-            show_keyword_trends()
+            export_report_menu()
 
         elif choice == "7":
-            show_niche_dna()
+            show_keyword_trends()
 
         elif choice == "8":
-            show_top_niches()
+            show_niche_dna()
 
         elif choice == "9":
-            show_hidden_opportunities()
+            show_top_niches()
 
         elif choice == "10":
+            show_hidden_opportunities()
+
+        elif choice == "11":
             print()
             print("[OK] Goodbye!")
             break

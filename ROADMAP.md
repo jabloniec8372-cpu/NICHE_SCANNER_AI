@@ -47,17 +47,19 @@ Focus: document the current v1.2 codebase accurately before future feature work.
 - Expanded development rules in `AGENTS.md`.
 - Kept this release documentation-only.
 
-## Future Roadmap
-
-### v1.3 - CSV Import For Product Research Files
+### v1.3 - CSV Import For Product Research Files - Completed
 
 Focus: let users import their own product research data.
 
-- Add CSV import for product files.
-- Validate required columns before importing.
-- Keep compatibility with the current SQLite database.
-- Provide clear error messages for missing or invalid data.
-- Avoid external dependencies.
+- Added CSV import for product files.
+- Added validation for required columns: `title`, `price`, `reviews`, and `rating`.
+- Added conversion for price, reviews, and rating values.
+- Added safe skipping for invalid CSV rows.
+- Added CLI menu support for CSV import.
+- Kept compatibility with the current SQLite database.
+- Avoided external dependencies.
+
+## Future Roadmap
 
 ### v1.4 - Dashboard Or Richer Reporting
 

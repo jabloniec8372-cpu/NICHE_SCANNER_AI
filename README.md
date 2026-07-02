@@ -1,28 +1,30 @@
 # NicheScanner AI
 
-NicheScanner AI is a beginner-friendly Python command-line application for researching print-on-demand niche ideas. It stores product examples, scans mock keyword results, scores demand signals, estimates competition, detects simple Niche DNA categories, finds promising opportunities, and exports research data to CSV.
+NicheScanner AI is a beginner-friendly Python command-line application for researching print-on-demand niche ideas. It stores product examples, imports user CSV research files, scans mock keyword results, scores demand signals, estimates competition, detects simple Niche DNA categories, finds promising opportunities, and exports research data to CSV.
 
-Current version: v1.2.1
+Current version: v1.3
 
-Release v1.2.1 is a GitHub polish and documentation update for the current v1.2 codebase. The app remains offline, terminal-based, dependency-free, and built with the Python standard library.
+Release v1.3 adds CSV product import so users can bring their own product research files into the app. The project remains offline, terminal-based, dependency-free, and built with the Python standard library.
 
 ## What It Does
 
 NicheScanner AI provides a small research workflow for product niche exploration:
 
 1. Import sample products with title, platform, price, reviews, and rating.
-2. Scan a keyword using offline mock product results.
-3. Store products in a local SQLite database.
-4. Generate terminal reports with scores, rating details, competition, and opportunity labels.
-5. Analyze common keywords in product titles.
-6. Detect product type and topic using the Niche DNA engine.
-7. Show ranked top niches.
-8. Find hidden opportunities based on demand, price, and score.
-9. Export product research to a CSV report.
+2. Import your own product research from a CSV file.
+3. Scan a keyword using offline mock product results.
+4. Store products in a local SQLite database.
+5. Generate terminal reports with scores, rating details, competition, and opportunity labels.
+6. Analyze common keywords in product titles.
+7. Detect product type and topic using the Niche DNA engine.
+8. Show ranked top niches.
+9. Find hidden opportunities based on demand, price, and score.
+10. Export product research to a CSV report.
 
 ## Current Features
 
-- CLI menu: beginner-friendly terminal menu with import, report, scan, clear, export, trends, Niche DNA, Top Niches, Hidden Opportunities, and exit options.
+- CLI menu: beginner-friendly terminal menu with sample import, CSV import, report, scan, clear, export, trends, Niche DNA, Top Niches, Hidden Opportunities, and exit options.
+- CSV Product Import: imports user product research files with `title`, `price`, `reviews`, and `rating` columns.
 - Keyword Scanner: offline mock keyword scanner in `core/market_scanner.py` for local testing without scraping or APIs.
 - Niche DNA Engine: rule-based product type, topic, subtopic, and detected keyword classification using `core/engine/` modules and `core/knowledge/knowledge_base.json`.
 - Competition Engine: simple competition labels calculated in `core/scoring.py` from review counts: Very High, High, Medium, or Low.
@@ -59,29 +61,60 @@ The app opens this interactive menu:
 
 ```text
 1. Import sample products
-2. Show report
-3. Scan keyword
-4. Clear products
-5. Export CSV report
-6. Show keyword trends
-7. Show Niche DNA
-8. Show Top Niches
-9. Hidden Opportunities
-10. Exit
+2. Import products from CSV
+3. Show report
+4. Scan keyword
+5. Clear products
+6. Export CSV report
+7. Show keyword trends
+8. Show Niche DNA
+9. Show Top Niches
+10. Hidden Opportunities
+11. Exit
 ```
+
+## CSV Product Import
+
+Use menu option `2. Import products from CSV` to import your own research file.
+
+The CSV file must include these columns:
+
+```text
+title,price,reviews,rating
+```
+
+Example CSV:
+
+```csv
+title,price,reviews,rating
+Funny Cat Tote Bag,18.99,420,4.7
+Camping Dad Hoodie,34.50,815,4.6
+Nurse Coffee Mug,16.99,230,4.8
+Invalid Product,not-a-price,100,4.5
+```
+
+The importer will:
+
+- Read the CSV path you enter in the terminal.
+- Validate that required columns exist.
+- Convert `price` to a decimal number.
+- Convert `reviews` to a whole number.
+- Convert `rating` to a decimal number.
+- Skip invalid rows with clear messages.
+- Store valid products in SQLite using `CSV Import` as the platform.
 
 ## Basic Test Flow
 
-After starting the app, you can test the main workflow with:
+After starting the app, you can test the sample workflow with:
 
 ```text
-4
-1
-2
-8
-9
 5
+1
+3
+9
 10
+6
+11
 ```
 
 Expected result:
@@ -129,6 +162,7 @@ NICHE_SCANNER_AI/
   core/
     main.py                    CLI menu and application flow
     database.py                SQLite database helpers and rating migration
+    csv_importer.py            CSV product import and validation
     scoring.py                 Score, rating score, competition, and opportunity logic
     opportunity_finder.py      Hidden opportunity detection
     market_scanner.py          Offline mock keyword scanner
@@ -163,7 +197,8 @@ NicheScanner AI demonstrates practical Python automation and product research lo
 
 - Python command-line application structure
 - SQLite data storage and safe schema migration
-- CSV processing
+- CSV import and export
+- CSV validation and data conversion
 - Keyword analysis
 - Rule-based product classification
 - Reusable scoring logic
@@ -181,10 +216,10 @@ Completed:
 - v0.9.1: Path, validation, and scoring documentation fixes
 - v1.2: Rating, competition, opportunity, Top Niches, and richer export support
 - v1.2.1: GitHub polish and documentation update
+- v1.3: CSV import for user product research files
 
 Future direction:
 
-- v1.3: CSV import for user product research files
 - v1.4: Dashboard or richer reporting
 - v1.5: Better trend and competition scoring
 - v2.0: Optional AI-assisted niche recommendations
@@ -192,6 +227,8 @@ Future direction:
 ## Limitations
 
 - Keyword scanning uses mock data only.
+- CSV import expects the required columns listed above.
+- Imported CSV rows use `CSV Import` as the platform.
 - No live marketplace scraping is implemented.
 - No external marketplace APIs are implemented.
 - No external AI recommendations are implemented.
@@ -229,3 +266,11 @@ Future direction:
 - Updated roadmap to mark completed versions and define future work from v1.3 onward.
 - Expanded development rules in `AGENTS.md`.
 - No application logic changes.
+
+### v1.3
+
+- Added CSV product import in `core/csv_importer.py`.
+- Added CLI menu support for importing products from CSV.
+- Added validation for required CSV columns.
+- Added safe skipping for invalid CSV rows.
+- Updated README and roadmap for the v1.3 release.
