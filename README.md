@@ -87,6 +87,21 @@ ETSY_KEYSTRING=your_etsy_keystring_here
 ```
 
 Do not commit `.env` or any API keys. When `ETSY_KEYSTRING` is missing, invalid, pending, or the Etsy request fails, NicheScanner AI automatically falls back to the existing mock product data so the app keeps working.
+
+## Optional Google Trends Integration
+
+NicheScanner AI can optionally show Google Trends insight inside the Streamlit dashboard. This does not require Google API keys.
+
+Google Trends support uses the optional `pytrends` package. It is not required for the app to run.
+
+To enable it later:
+
+```powershell
+pip install pytrends
+```
+
+When `pytrends` is missing, unavailable, or Google Trends requests fail, NicheScanner AI uses safe fallback values and keeps the dashboard working.
+
 ## CSV Product Import
 
 Use menu option `2. Import products from CSV` to import your own research file.

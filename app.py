@@ -13,6 +13,7 @@ from database import create_database, add_product, get_products, clear_products
 from market_scanner import scan_keyword
 from scoring import calculate_score
 from opportunity_finder import find_hidden_opportunities
+from connectors.google_trends import get_google_trend_summary
 
 
 APP_VERSION = "v1.4"
@@ -190,6 +191,19 @@ def get_kpi_values(products, rows, opportunities):
     }
 
 
+def get_trends_keyword(rows):
+    if not rows:
+        return ""
+
+    best_row = max(rows, key=lambda row: row["Score"])
+    title_words = str(best_row["Title"]).split()
+
+    if len(title_words) >= 2:
+        return " ".join(title_words[:2])
+
+    return best_row["Title"]
+
+
 def render_header():
     st.markdown(
         f"""
@@ -247,6 +261,20 @@ def render_sidebar(products, rows, opportunities):
         st.rerun()
 
     st.sidebar.caption("Use the scan form to import mock marketplace results.")
+
+
+def render_google_trends_card(summary):
+    st.markdown('<div class="section-title">Google Trends Insight</div>', unsafe_allow_html=True)
+
+    if summary["available"]:
+        st.success(summary["message"])
+    else:
+        st.info(summary["message"])
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Keyword", summary["keyword"] or "No keyword yet")
+    col2.metric("Trend Score", summary["trend_score"])
+    col3.metric("Direction", summary["trend_direction"])
 
 
 def render_scan_form():
@@ -432,6 +460,8 @@ products = get_products()
 rows = build_product_rows(products)
 opportunities = find_hidden_opportunities(products)
 kpis = get_kpi_values(products, rows, opportunities)
+trends_keyword = get_trends_keyword(rows)
+trend_summary = get_google_trend_summary(trends_keyword)
 
 render_header()
 render_sidebar(products, rows, opportunities)
@@ -469,10 +499,12 @@ if rows:
         .reset_index(drop=True)
     )
 
+    render_google_trends_card(trend_summary)
     render_charts(df)
 
     st.markdown('<div class="section-title">Product Research Table</div>', unsafe_allow_html=True)
     render_product_table(df)
     render_hidden_opportunities(opportunities)
 else:
+    render_google_trends_card(trend_summary)
     st.info("Scan a keyword to begin.")
