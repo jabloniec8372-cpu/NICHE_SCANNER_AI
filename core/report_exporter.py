@@ -11,14 +11,21 @@ REPORT_PATH = PROJECT_ROOT / "reports" / "nichescanner_report.csv"
 
 def export_products_to_csv(products):
     with open(REPORT_PATH, "w", newline="", encoding="utf-8") as file:
+
         writer = csv.writer(file)
 
         writer.writerow([
             "Title",
             "Platform",
             "Price",
+            "Rating",
             "Reviews",
             "Trend Score",
+            "Review Score",
+            "Price Score",
+            "Rating Score",
+            "Competition",
+            "Opportunity",
             "Product Type",
             "Main Topic",
             "Subtopic",
@@ -26,20 +33,32 @@ def export_products_to_csv(products):
         ])
 
         for product in products:
-            title, platform, price, reviews = product
-            score = calculate_score(price, reviews)
+
+            title, platform, price, reviews, rating = product
+
+            score = calculate_score(price, reviews, rating)
+
             dna = build_niche_dna(title)
 
             writer.writerow([
                 title,
                 platform,
                 price,
+                rating,
                 reviews,
-                score,
+                score["total_score"],
+                score["review_score"],
+                score["price_score"],
+                score["rating_score"],
+                score["competition"],
+                score["opportunity"],
                 dna["product_type"],
                 dna["main_topic"],
                 dna["subtopic"],
                 dna["detected_keyword"]
             ])
 
-    print(f"[OK] CSV report saved: {REPORT_PATH}")
+    print()
+    print(f"[OK] CSV report saved:")
+    print(REPORT_PATH)
+    print()

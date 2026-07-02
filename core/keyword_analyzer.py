@@ -11,7 +11,7 @@ def analyze_keywords(products):
     all_words = []
 
     for product in products:
-        title, platform, price, reviews = product
+        title = product[0]
         words = title.lower().replace("-", " ").split()
 
         for word in words:

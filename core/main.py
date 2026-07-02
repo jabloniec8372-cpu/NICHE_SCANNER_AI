@@ -1,4 +1,4 @@
-﻿from database import create_database
+from database import create_database
 from database import add_product
 from database import get_products
 from database import clear_products
@@ -7,11 +7,12 @@ from report_exporter import export_products_to_csv
 from keyword_analyzer import analyze_keywords
 from engine.niche_dna_engine import build_niche_dna
 from scoring import calculate_score
+from opportunity_finder import find_hidden_opportunities
 
 
 def show_menu():
     print("===================================")
-    print("     NICHE SCANNER AI v0.9.1")
+    print("     NICHE SCANNER AI v1.2")
     print("===================================")
     print()
     print("1. Import sample products")
@@ -21,18 +22,20 @@ def show_menu():
     print("5. Export CSV report")
     print("6. Show keyword trends")
     print("7. Show Niche DNA")
-    print("8. Exit")
+    print("8. Show Top Niches")
+    print("9. Hidden Opportunities")
+    print("10. Exit")
     print()
 
     return input("Choose option: ")
 
 
 def import_products():
-    add_product("Funny Cat Shirt", "Etsy", 19.99, 842)
-    add_product("Camping Dad Shirt", "Etsy", 22.50, 620)
-    add_product("Nurse Coffee Shirt", "Redbubble", 24.00, 1200)
-    add_product("Funny German Shepherd Hoodie", "Etsy", 29.99, 930)
-    add_product("Camping Grandpa Coffee Mug", "Etsy", 16.50, 410)
+    add_product("Funny Cat Shirt", "Etsy", 19.99, 842, 4.7)
+    add_product("Camping Dad Shirt", "Etsy", 22.50, 620, 4.6)
+    add_product("Nurse Coffee Shirt", "Redbubble", 24.00, 1200, 4.9)
+    add_product("Funny German Shepherd Hoodie", "Etsy", 29.99, 930, 4.8)
+    add_product("Camping Grandpa Coffee Mug", "Etsy", 16.50, 410, 4.4)
 
     print()
     print("[OK] Sample products imported.")
@@ -60,7 +63,8 @@ def scan_keyword_menu():
             product["title"],
             product["platform"],
             product["price"],
-            product["reviews"]
+            product["reviews"],
+            product.get("rating", 0)
         )
 
         if was_inserted:
@@ -83,14 +87,20 @@ def show_report():
         return
 
     for product in products:
-        title, platform, price, reviews = product
-        score = calculate_score(price, reviews)
+        title, platform, price, reviews, rating = product
+        score = calculate_score(price, reviews, rating)
 
         print(f"Title: {title}")
         print(f"Platform: {platform}")
         print(f"Price: ${price}")
         print(f"Reviews: {reviews}")
-        print(f"Trend Score: {score}/100")
+        print(f"Rating: {rating}")
+        print(f"Trend Score: {score['total_score']}/100")
+        print(f"Review Score: {score['review_score']}/50")
+        print(f"Price Score: {score['price_score']}/30")
+        print(f"Rating Score: {score['rating_score']}/20")
+        print(f"Competition: {score['competition']}")
+        print(f"Opportunity: {score['opportunity']}")
         print("------------------------------------------")
 
     print()
@@ -131,7 +141,7 @@ def show_niche_dna():
     print()
 
     for product in products:
-        title, platform, price, reviews = product
+        title, platform, price, reviews, rating = product
         dna = build_niche_dna(title)
 
         print(f"Title: {dna['title']}")
@@ -140,6 +150,93 @@ def show_niche_dna():
         print(f"Subtopic: {dna['subtopic']}")
         print(f"Detected Keyword: {dna['detected_keyword']}")
         print("--------------------------------")
+
+    print()
+
+
+def show_top_niches():
+    products = get_products()
+
+    if not products:
+        print()
+        print("[ERROR] No products to analyze.")
+        print()
+        return
+
+    ranked_products = []
+
+    for product in products:
+        title, platform, price, reviews, rating = product
+        score = calculate_score(price, reviews, rating)
+
+        ranked_products.append({
+            "title": title,
+            "platform": platform,
+            "price": price,
+            "reviews": reviews,
+            "rating": rating,
+            "score": score
+        })
+
+    ranked_products.sort(
+        key=lambda item: item["score"]["total_score"],
+        reverse=True
+    )
+
+    print()
+    print("========== TOP NICHES ==========")
+    print()
+
+    for index, item in enumerate(ranked_products[:10], start=1):
+        print(f"{index}. {item['title']}")
+        print(f"   Platform: {item['platform']}")
+        print(f"   Price: ${item['price']}")
+        print(f"   Reviews: {item['reviews']}")
+        print(f"   Rating: {item['rating']}")
+        print(f"   Competition: {item['score']['competition']}")
+        print(f"   Score: {item['score']['total_score']}/100")
+        print(f"   Opportunity: {item['score']['opportunity']}")
+        print("--------------------------------")
+        print()
+
+    print()
+
+
+def show_hidden_opportunities():
+    products = get_products()
+
+    if not products:
+        print()
+        print("[ERROR] No products to analyze.")
+        print()
+        return
+
+    opportunities = find_hidden_opportunities(products)
+
+    print()
+    print("========== HIDDEN OPPORTUNITIES ==========")
+    print()
+
+    if not opportunities:
+        print("No hidden opportunities found.")
+        print()
+        return
+
+    for item in opportunities:
+        print(f"[OPPORTUNITY] {item['title']}")
+        print(f"Platform: {item['platform']}")
+        print(f"Price: ${item['price']}")
+        print(f"Reviews: {item['reviews']}")
+        print(f"Rating: {item['rating']}")
+        print(f"Competition: {item['score']['competition']}")
+        print(f"Score: {item['score']['total_score']}/100")
+        print("Reasons:")
+
+        for reason in item["reasons"]:
+            print(f"  - {reason}")
+
+        print("------------------------------------------")
+        print()
 
     print()
 
@@ -193,6 +290,12 @@ def main():
             show_niche_dna()
 
         elif choice == "8":
+            show_top_niches()
+
+        elif choice == "9":
+            show_hidden_opportunities()
+
+        elif choice == "10":
             print()
             print("[OK] Goodbye!")
             break
@@ -205,3 +308,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
