@@ -3,7 +3,9 @@ from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+ETSY_PING_URL = "https://openapi.etsy.com/v3/application/openapi-ping"
 ETSY_SEARCH_URL = "https://openapi.etsy.com/v3/application/listings/active"
+DEBUG_RESPONSE_LIMIT = 300
 
 
 def get_etsy_keystring():
@@ -12,47 +14,74 @@ def get_etsy_keystring():
     if keystring:
         return keystring
 
-    return _read_keystring_from_env_file()
+    return _read_value_from_env_file("ETSY_KEYSTRING")
+
+
+def get_etsy_shared_secret():
+    shared_secret = os.environ.get("ETSY_SHARED_SECRET", "").strip()
+
+    if shared_secret:
+        return shared_secret
+
+    return _read_value_from_env_file("ETSY_SHARED_SECRET")
+
+
+def get_etsy_api_key():
+    keystring = get_etsy_keystring()
+    shared_secret = get_etsy_shared_secret()
+
+    if not keystring or not shared_secret:
+        return ""
+
+    return f"{keystring}:{shared_secret}"
 
 
 def is_etsy_configured():
-    return bool(get_etsy_keystring())
+    return bool(get_etsy_api_key())
 
 
 def search_etsy_products(keyword, limit=10):
-    keystring = get_etsy_keystring()
+    api_key = get_etsy_api_key()
 
-    if not keystring:
+    if not api_key:
         return []
 
-    try:
-        import requests
-    except ImportError:
-        print("[INFO] Etsy API key found, but the requests package is not installed.")
+    requests = _get_requests_module()
+
+    if requests is None:
+        print("[INFO] Etsy API credentials found, but the requests package is not installed.")
+        print("[INFO] Using mock product data instead.")
+        return []
+
+    if not _is_etsy_key_accepted(requests, api_key):
+        print("[INFO] Etsy API credentials were not accepted by Etsy ping endpoint.")
         print("[INFO] Using mock product data instead.")
         return []
 
     try:
         response = requests.get(
             ETSY_SEARCH_URL,
-            headers={"x-api-key": keystring},
+            headers=_build_etsy_headers(api_key),
             params={
                 "keywords": keyword,
-                "limit": limit,
-                "includes": "Images"
+                "limit": limit
             },
             timeout=10
         )
-        response.raise_for_status()
+
+        if not response.ok:
+            _print_etsy_response_debug("listing search", response)
+            return []
     except requests.RequestException as error:
-        print("[INFO] Etsy API request failed. Using mock product data instead.")
+        print("[INFO] Etsy listing search failed. Using mock product data instead.")
         print(error)
         return []
 
     try:
         data = response.json()
     except ValueError:
-        print("[INFO] Etsy API returned an invalid response. Using mock product data instead.")
+        print("[INFO] Etsy API returned an invalid JSON response. Using mock product data instead.")
+        _print_response_text_preview(response)
         return []
 
     listings = data.get("results", [])
@@ -67,7 +96,57 @@ def search_etsy_products(keyword, limit=10):
     return products
 
 
-def _read_keystring_from_env_file():
+def _get_requests_module():
+    try:
+        import requests
+        return requests
+    except ImportError:
+        return None
+
+
+def _is_etsy_key_accepted(requests, api_key):
+    try:
+        response = requests.get(
+            ETSY_PING_URL,
+            headers=_build_etsy_headers(api_key),
+            timeout=10
+        )
+    except requests.RequestException as error:
+        print("[INFO] Etsy ping request failed. Using mock product data instead.")
+        print(error)
+        return False
+
+    if not response.ok:
+        _print_etsy_response_debug("openapi ping", response)
+        return False
+
+    return True
+
+
+def _build_etsy_headers(api_key):
+    return {
+        "x-api-key": api_key,
+        "Accept": "application/json"
+    }
+
+
+def _print_etsy_response_debug(action, response):
+    print(f"[INFO] Etsy {action} failed. Using mock product data instead.")
+    print(f"[INFO] Etsy status code: {response.status_code}")
+    _print_response_text_preview(response)
+
+
+def _print_response_text_preview(response):
+    response_text = str(getattr(response, "text", ""))
+    preview = response_text[:DEBUG_RESPONSE_LIMIT]
+
+    if preview:
+        print(f"[INFO] Etsy response preview: {preview}")
+    else:
+        print("[INFO] Etsy response preview: <empty response>")
+
+
+def _read_value_from_env_file(variable_name):
     env_path = PROJECT_ROOT / ".env"
 
     if not env_path.exists():
@@ -86,7 +165,7 @@ def _read_keystring_from_env_file():
 
                 name, value = clean_line.split("=", 1)
 
-                if name.strip() == "ETSY_KEYSTRING":
+                if name.strip() == variable_name:
                     return value.strip().strip('"').strip("'")
     except OSError:
         return ""
