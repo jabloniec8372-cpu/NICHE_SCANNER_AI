@@ -59,16 +59,18 @@ Focus: let users import their own product research data.
 - Kept compatibility with the current SQLite database.
 - Avoided external dependencies.
 
+### v1.4 - Static HTML Dashboard - Completed
+
+Focus: make stored product research easier to review in a browser.
+
+- Added static HTML dashboard generation.
+- Added summary cards for total products, average score, best product, and hidden opportunities.
+- Added a sortable product table.
+- Included score, competition, opportunity, product type, main topic, and subtopic fields.
+- Used inline HTML, CSS, and simple JavaScript.
+- Kept the feature dependency-free and compatible with the existing SQLite workflow.
+
 ## Future Roadmap
-
-### v1.4 - Dashboard Or Richer Reporting
-
-Focus: improve how users review research results.
-
-- Explore a simple dashboard or richer terminal report.
-- Add summary statistics for products, scores, ratings, and competition.
-- Make reports easier to scan and compare.
-- Preserve the current CLI menu.
 
 ### v1.5 - Better Trend And Competition Scoring
 

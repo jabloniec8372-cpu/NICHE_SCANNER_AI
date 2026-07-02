@@ -1,10 +1,10 @@
 # NicheScanner AI
 
-NicheScanner AI is a beginner-friendly Python command-line application for researching print-on-demand niche ideas. It stores product examples, imports user CSV research files, scans mock keyword results, scores demand signals, estimates competition, detects simple Niche DNA categories, finds promising opportunities, and exports research data to CSV.
+NicheScanner AI is a beginner-friendly Python command-line application for researching print-on-demand niche ideas. It stores product examples, imports user CSV research files, scans mock keyword results, scores demand signals, estimates competition, detects simple Niche DNA categories, finds promising opportunities, exports research data to CSV, and generates a static HTML dashboard.
 
-Current version: v1.3
+Current version: v1.4
 
-Release v1.3 adds CSV product import so users can bring their own product research files into the app. The project remains offline, terminal-based, dependency-free, and built with the Python standard library.
+Release v1.4 adds a static HTML dashboard export so users can review stored product data in a browser. The project remains offline, terminal-based, dependency-free, and built with the Python standard library.
 
 ## What It Does
 
@@ -20,10 +20,11 @@ NicheScanner AI provides a small research workflow for product niche exploration
 8. Show ranked top niches.
 9. Find hidden opportunities based on demand, price, and score.
 10. Export product research to a CSV report.
+11. Generate a static HTML dashboard.
 
 ## Current Features
 
-- CLI menu: beginner-friendly terminal menu with sample import, CSV import, report, scan, clear, export, trends, Niche DNA, Top Niches, Hidden Opportunities, and exit options.
+- CLI menu: beginner-friendly terminal menu with sample import, CSV import, report, scan, clear, export, dashboard, trends, Niche DNA, Top Niches, Hidden Opportunities, and exit options.
 - CSV Product Import: imports user product research files with `title`, `price`, `reviews`, and `rating` columns.
 - Keyword Scanner: offline mock keyword scanner in `core/market_scanner.py` for local testing without scraping or APIs.
 - Niche DNA Engine: rule-based product type, topic, subtopic, and detected keyword classification using `core/engine/` modules and `core/knowledge/knowledge_base.json`.
@@ -31,6 +32,7 @@ NicheScanner AI provides a small research workflow for product niche exploration
 - Opportunity Finder: identifies products with strong demand, healthy pricing, and good niche scores in `core/opportunity_finder.py`.
 - Rating and scoring logic: products support ratings, and scoring includes review score, price score, rating score, total score, competition, and opportunity.
 - CSV Export: exports product details, rating, scores, competition, opportunity, and Niche DNA fields to `reports/nichescanner_report.csv`.
+- HTML Dashboard: generates `reports/dashboard.html` with summary cards and a sortable product table.
 - SQLite storage: stores products locally in `data/nichescanner.db`, with safe migration support for the `rating` column.
 - Keyword trends: counts repeated words in stored product titles.
 - No external dependencies: uses only the Python standard library.
@@ -66,11 +68,12 @@ The app opens this interactive menu:
 4. Scan keyword
 5. Clear products
 6. Export CSV report
-7. Show keyword trends
-8. Show Niche DNA
-9. Show Top Niches
-10. Hidden Opportunities
-11. Exit
+7. Generate HTML dashboard
+8. Show keyword trends
+9. Show Niche DNA
+10. Show Top Niches
+11. Hidden Opportunities
+12. Exit
 ```
 
 ## CSV Product Import
@@ -103,6 +106,37 @@ The importer will:
 - Skip invalid rows with clear messages.
 - Store valid products in SQLite using `CSV Import` as the platform.
 
+## HTML Dashboard
+
+Use menu option `7. Generate HTML dashboard` to create:
+
+```text
+reports/dashboard.html
+```
+
+The dashboard includes summary cards for:
+
+- Total products
+- Average score
+- Best product
+- Hidden opportunities
+
+It also includes a product table with:
+
+- Title
+- Platform
+- Price
+- Rating
+- Reviews
+- Score
+- Competition
+- Opportunity
+- Product type
+- Main topic
+- Subtopic
+
+Click a table header in the browser to sort the table by that column.
+
 ## Basic Test Flow
 
 After starting the app, you can test the sample workflow with:
@@ -111,16 +145,18 @@ After starting the app, you can test the sample workflow with:
 5
 1
 3
-9
+7
 10
-6
 11
+6
+12
 ```
 
 Expected result:
 
 - Products are cleared and sample products are imported.
 - The report shows rating, rating score, competition, and opportunity.
+- The HTML dashboard is created at `reports/dashboard.html`.
 - Top Niches shows rating and competition.
 - Hidden Opportunities runs without crashing.
 - CSV export creates `reports/nichescanner_report.csv`.
@@ -163,6 +199,7 @@ NICHE_SCANNER_AI/
     main.py                    CLI menu and application flow
     database.py                SQLite database helpers and rating migration
     csv_importer.py            CSV product import and validation
+    dashboard_exporter.py      Static HTML dashboard export
     scoring.py                 Score, rating score, competition, and opportunity logic
     opportunity_finder.py      Hidden opportunity detection
     market_scanner.py          Offline mock keyword scanner
@@ -187,6 +224,7 @@ NICHE_SCANNER_AI/
 
   reports/
     nichescanner_report.csv    Exported CSV report
+    dashboard.html             Static HTML dashboard
 ```
 
 Note: competition logic is currently part of `core/scoring.py`; there is no separate competition engine file yet.
@@ -199,6 +237,7 @@ NicheScanner AI demonstrates practical Python automation and product research lo
 - SQLite data storage and safe schema migration
 - CSV import and export
 - CSV validation and data conversion
+- Static HTML report generation
 - Keyword analysis
 - Rule-based product classification
 - Reusable scoring logic
@@ -217,10 +256,10 @@ Completed:
 - v1.2: Rating, competition, opportunity, Top Niches, and richer export support
 - v1.2.1: GitHub polish and documentation update
 - v1.3: CSV import for user product research files
+- v1.4: Static HTML dashboard export
 
 Future direction:
 
-- v1.4: Dashboard or richer reporting
 - v1.5: Better trend and competition scoring
 - v2.0: Optional AI-assisted niche recommendations
 
@@ -229,6 +268,7 @@ Future direction:
 - Keyword scanning uses mock data only.
 - CSV import expects the required columns listed above.
 - Imported CSV rows use `CSV Import` as the platform.
+- The HTML dashboard is a static generated file.
 - No live marketplace scraping is implemented.
 - No external marketplace APIs are implemented.
 - No external AI recommendations are implemented.
@@ -274,3 +314,11 @@ Future direction:
 - Added validation for required CSV columns.
 - Added safe skipping for invalid CSV rows.
 - Updated README and roadmap for the v1.3 release.
+
+### v1.4
+
+- Added static HTML dashboard generation in `core/dashboard_exporter.py`.
+- Added CLI menu support for generating `reports/dashboard.html`.
+- Added dashboard summary cards for total products, average score, best product, and hidden opportunities.
+- Added sortable dashboard product table with score, competition, opportunity, and Niche DNA fields.
+- Updated README and roadmap for the v1.4 release.

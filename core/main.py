@@ -3,6 +3,7 @@ from database import add_product
 from database import get_products
 from database import clear_products
 from csv_importer import import_products_from_csv
+from dashboard_exporter import export_dashboard
 from market_scanner import scan_keyword
 from report_exporter import export_products_to_csv
 from keyword_analyzer import analyze_keywords
@@ -13,7 +14,7 @@ from opportunity_finder import find_hidden_opportunities
 
 def show_menu():
     print("===================================")
-    print("     NICHE SCANNER AI v1.3")
+    print("     NICHE SCANNER AI v1.4")
     print("===================================")
     print()
     print("1. Import sample products")
@@ -22,11 +23,12 @@ def show_menu():
     print("4. Scan keyword")
     print("5. Clear products")
     print("6. Export CSV report")
-    print("7. Show keyword trends")
-    print("8. Show Niche DNA")
-    print("9. Show Top Niches")
-    print("10. Hidden Opportunities")
-    print("11. Exit")
+    print("7. Generate HTML dashboard")
+    print("8. Show keyword trends")
+    print("9. Show Niche DNA")
+    print("10. Show Top Niches")
+    print("11. Hidden Opportunities")
+    print("12. Exit")
     print()
 
     return input("Choose option: ")
@@ -284,6 +286,23 @@ def export_report_menu():
     print()
 
 
+def export_dashboard_menu():
+    products = get_products()
+
+    if not products:
+        print()
+        print("[ERROR] No products to export.")
+        print()
+        return
+
+    dashboard_path = export_dashboard(products)
+
+    print()
+    print("[OK] HTML dashboard saved:")
+    print(dashboard_path)
+    print()
+
+
 def clear_products_menu():
     clear_products()
 
@@ -317,18 +336,21 @@ def main():
             export_report_menu()
 
         elif choice == "7":
-            show_keyword_trends()
+            export_dashboard_menu()
 
         elif choice == "8":
-            show_niche_dna()
+            show_keyword_trends()
 
         elif choice == "9":
-            show_top_niches()
+            show_niche_dna()
 
         elif choice == "10":
-            show_hidden_opportunities()
+            show_top_niches()
 
         elif choice == "11":
+            show_hidden_opportunities()
+
+        elif choice == "12":
             print()
             print("[OK] Goodbye!")
             break
