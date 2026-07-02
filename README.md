@@ -76,6 +76,17 @@ The app opens this interactive menu:
 12. Exit
 ```
 
+## Optional Etsy API Integration
+
+NicheScanner AI can optionally use Etsy Open API v3 for keyword scans. The Etsy API key request is currently expected to be pending personal approval, so the app does not require a working key yet.
+
+To configure Etsy later, set `ETSY_KEYSTRING` as an environment variable or in a local `.env` file:
+
+```text
+ETSY_KEYSTRING=your_etsy_keystring_here
+```
+
+Do not commit `.env` or any API keys. When `ETSY_KEYSTRING` is missing, invalid, pending, or the Etsy request fails, NicheScanner AI automatically falls back to the existing mock product data so the app keeps working.
 ## CSV Product Import
 
 Use menu option `2. Import products from CSV` to import your own research file.

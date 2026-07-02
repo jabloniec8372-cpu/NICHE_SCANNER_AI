@@ -1,4 +1,12 @@
-﻿def scan_keyword(keyword):
+from connectors.etsy_api import search_etsy_products
+
+
+def scan_keyword(keyword):
+    etsy_products = search_etsy_products(keyword)
+
+    if etsy_products:
+        return etsy_products
+
     products = [
         {
             "title": f"Funny {keyword} Vintage Shirt",

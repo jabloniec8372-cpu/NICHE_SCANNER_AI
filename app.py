@@ -250,7 +250,7 @@ def render_sidebar(products, rows, opportunities):
 
 
 def render_scan_form():
-    with st.form("search_form"):
+    with st.form("search_form", enter_to_submit=True):
         keyword = st.text_input(
             "Scan keyword",
             placeholder="example: nurse, camping, cat"
@@ -311,16 +311,57 @@ def render_product_table(df):
 
 
 def render_charts(df):
-    chart_col1, chart_col2 = st.columns([1.35, 1])
+    chart_col1, chart_col2 = st.columns([1.45, 1], gap="large")
 
     with chart_col1:
         st.markdown('<div class="section-title">Top 10 Products by Score</div>', unsafe_allow_html=True)
         top_products = (
             df.sort_values("Score", ascending=False)
-            .head(10)
-            .set_index("Title")[["Score"]]
+            .head(10)[["Title", "Score"]]
+            .reset_index(drop=True)
         )
-        st.bar_chart(top_products, horizontal=True, height=360)
+
+        st.vega_lite_chart(
+            top_products,
+            {
+                "height": 320,
+                "autosize": {"type": "fit", "contains": "padding"},
+                "mark": {"type": "bar", "cornerRadiusEnd": 4, "tooltip": True},
+                "encoding": {
+                    "y": {
+                        "field": "Title",
+                        "type": "nominal",
+                        "sort": "-x",
+                        "axis": {
+                            "title": None,
+                            "labelLimit": 260,
+                            "labelFontSize": 12
+                        }
+                    },
+                    "x": {
+                        "field": "Score",
+                        "type": "quantitative",
+                        "scale": {"domain": [0, 100]},
+                        "axis": {"title": "Score", "grid": True}
+                    },
+                    "color": {
+                        "field": "Score",
+                        "type": "quantitative",
+                        "scale": {"scheme": "blues"},
+                        "legend": None
+                    },
+                    "tooltip": [
+                        {"field": "Title", "type": "nominal"},
+                        {"field": "Score", "type": "quantitative"}
+                    ]
+                },
+                "config": {
+                    "view": {"stroke": None},
+                    "axis": {"labelColor": "#334155", "titleColor": "#64748b"}
+                }
+            },
+            width="stretch"
+        )
 
     with chart_col2:
         st.markdown('<div class="section-title">Platform Distribution</div>', unsafe_allow_html=True)
@@ -334,16 +375,22 @@ def render_charts(df):
         st.vega_lite_chart(
             platform_df,
             {
-                "mark": {"type": "arc", "innerRadius": 45},
+                "height": 320,
+                "autosize": {"type": "fit", "contains": "padding"},
+                "mark": {"type": "arc", "innerRadius": 52, "tooltip": True},
                 "encoding": {
                     "theta": {"field": "Products", "type": "quantitative"},
-                    "color": {"field": "Platform", "type": "nominal"},
+                    "color": {
+                        "field": "Platform",
+                        "type": "nominal",
+                        "legend": {"orient": "bottom", "title": None}
+                    },
                     "tooltip": [
                         {"field": "Platform", "type": "nominal"},
-                        {"field": "Products", "type": "quantitative"},
-                    ],
+                        {"field": "Products", "type": "quantitative"}
+                    ]
                 },
-                "view": {"stroke": None},
+                "config": {"view": {"stroke": None}}
             },
             width="stretch"
         )

@@ -5,3 +5,4 @@ reports/*.csv
 .DS_Store
 .vscode/settings.json
 reports/
+.env
