@@ -76,6 +76,18 @@ The app opens this interactive menu:
 12. Exit
 ```
 
+## Connector Manager
+
+NicheScanner AI uses a Connector Manager in `core/connectors/connector_manager.py` to coordinate optional product and trend integrations from one place.
+
+Current connector behavior:
+
+- Etsy: used for product search only when `ETSY_KEYSTRING` is configured and the API request succeeds.
+- Google Trends: used only when optional `pytrends` is installed and the request succeeds.
+- eBay: planned future connector.
+- Pinterest: planned future connector.
+
+All external integrations are optional. If an API key, optional package, or external request is unavailable, the app falls back safely to mock product data or fallback trend values.
 ## Optional Etsy API Integration
 
 NicheScanner AI can optionally use Etsy Open API v3 for keyword scans. The Etsy API key request is currently expected to be pending personal approval, so the app does not require a working key yet.

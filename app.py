@@ -13,7 +13,7 @@ from database import create_database, add_product, get_products, clear_products
 from market_scanner import scan_keyword
 from scoring import calculate_score
 from opportunity_finder import find_hidden_opportunities
-from connectors.google_trends import get_google_trend_summary
+from connectors.connector_manager import get_connector_status, get_trend_summary
 
 
 APP_VERSION = "v1.4"
@@ -246,7 +246,7 @@ def competition_badge(value):
     return f"color: white; background-color: {color}; font-weight: 700;"
 
 
-def render_sidebar(products, rows, opportunities):
+def render_sidebar(products, rows, opportunities, connector_status):
     st.sidebar.markdown("## NicheScanner AI")
     st.sidebar.caption(f"Project version: {APP_VERSION}")
 
@@ -254,6 +254,11 @@ def render_sidebar(products, rows, opportunities):
     st.sidebar.metric("Stored products", len(products))
     st.sidebar.metric("Platforms", len({row["Platform"] for row in rows}))
     st.sidebar.metric("Hidden opportunities", len(opportunities))
+
+    st.sidebar.markdown("### Connectors")
+    for connector_name, connector in connector_status.items():
+        label = connector_name.replace("_", " ").title()
+        st.sidebar.caption(f"{label}: {connector['status']}")
 
     st.sidebar.markdown("### Quick actions")
     if st.sidebar.button("Clear database", width="stretch"):
@@ -461,10 +466,11 @@ rows = build_product_rows(products)
 opportunities = find_hidden_opportunities(products)
 kpis = get_kpi_values(products, rows, opportunities)
 trends_keyword = get_trends_keyword(rows)
-trend_summary = get_google_trend_summary(trends_keyword)
+trend_summary = get_trend_summary(trends_keyword)
+connector_status = get_connector_status()
 
 render_header()
-render_sidebar(products, rows, opportunities)
+render_sidebar(products, rows, opportunities, connector_status)
 
 scan_col, note_col = st.columns([1.2, 1])
 
