@@ -4,7 +4,7 @@ NicheScanner AI is a beginner-friendly Python command-line application for resea
 
 Current version: v1.5
 
-Release v1.5 improves the optional Etsy API integration. Keyword scans can now store and display richer Etsy product data, including product thumbnails, product links, listing IDs, shop names, shop links, currency, and price when Etsy returns those fields.
+Release v1.5 improves the optional Etsy API integration. Keyword scans can now store and display richer Etsy product data, including product thumbnails, product links, listing IDs, shop names, shop links, currency, price, Shop Rating, and Shop Reviews when Etsy returns those fields. Etsy scans now use the Etsy batch endpoint, reducing typical scan time from approximately 2 minutes to around 7-8 seconds.
 
 ## What It Does
 
@@ -28,7 +28,7 @@ NicheScanner AI provides a small research workflow for product niche exploration
 - CLI menu: beginner-friendly terminal menu with sample import, CSV import, report, scan, clear, export, dashboard, trends, Niche DNA, Top Niches, Hidden Opportunities, and exit options.
 - CSV Product Import: imports user product research files with `title`, `price`, `reviews`, and `rating` columns.
 - Keyword Scanner: optional Etsy keyword search with safe mock fallback in `core/connectors/`.
-- Etsy Product Details: stores listing ID, product URL, image URL, shop name, shop URL, currency, and price when available.
+- Etsy Product Details: stores listing ID, product URL, image URL, shop name, shop URL, currency, price, Shop Rating, and Shop Reviews when available.
 - Niche DNA Engine: rule-based product type, topic, subtopic, and detected keyword classification using `core/engine/` modules and `core/knowledge/knowledge_base.json`.
 - Competition Engine: simple competition labels calculated in `core/scoring.py` from review counts: Very High, High, Medium, or Low.
 - Opportunity Finder: identifies products with strong demand, healthy pricing, and good niche scores in `core/opportunity_finder.py`.
@@ -101,7 +101,7 @@ ETSY_KEYSTRING=your_etsy_keystring_here
 ETSY_SHARED_SECRET=your_etsy_shared_secret_here
 ```
 
-Do not commit `.env` or any API keys. When Etsy search succeeds, NicheScanner AI imports product title, platform, price, currency, listing ID, product URL, product image, shop name, and shop URL when those fields are available from Etsy. If image or shop enrichment fails for an individual listing, the product is still imported with the fields that were available.
+Do not commit `.env` or any API keys. When Etsy search succeeds, NicheScanner AI imports product title, platform, price, currency, listing ID, product URL, product image, shop name, shop URL, Shop Rating, and Shop Reviews when those fields are available from Etsy. Etsy enrichment uses the batch listing endpoint so product images and shop data are fetched with a single batch request instead of one request per product. This keeps typical Etsy scans near 7-8 seconds instead of approximately 2 minutes. Etsy public API batch responses do not provide listing-level aggregate ratings, so Shop Rating and Shop Reviews represent the shop rather than the individual product listing.
 
 ## Optional Google Trends Integration
 
@@ -169,8 +169,8 @@ It also includes a product table with:
 - Platform
 - Price
 - Currency
-- Rating
-- Reviews
+- Shop Rating
+- Shop Reviews
 - Listing ID
 - Product URL
 - Shop name
@@ -313,7 +313,7 @@ Completed:
 - v1.2.1: GitHub polish and documentation update
 - v1.3: CSV import for user product research files
 - v1.4: Static HTML dashboard export
-- v1.5: Rich Etsy product data import and dashboard display
+- v1.5: Rich Etsy product data import, faster batch-based Etsy scans, shop-level rating/review display, and dashboard display
 
 Future direction:
 
@@ -382,6 +382,9 @@ Future direction:
 ### v1.5
 
 - Added safe SQLite columns for optional Etsy listing details.
-- Enriched Etsy imports with listing ID, product URL, image URL, shop name, shop URL, currency, and price when available.
-- Displayed product thumbnails and clickable product links in the Streamlit dashboard.
+- Enriched Etsy imports with listing ID, product URL, image URL, shop name, shop URL, currency, price, Shop Rating, and Shop Reviews when available.
+- Optimized Etsy scans with the Etsy batch endpoint, reducing typical scan time from approximately 2 minutes to around 7-8 seconds.
+- Fetched product images and shop data with a single batch request instead of one request per product.
+- Displayed product thumbnails, clickable product links, Shop Rating, and Shop Reviews in the Streamlit dashboard.
+- Clarified that Etsy Shop Rating and Shop Reviews are shop-level metrics because Etsy public batch listing responses do not provide listing-level aggregate ratings.
 - Kept mock fallback and older SQLite databases compatible.
