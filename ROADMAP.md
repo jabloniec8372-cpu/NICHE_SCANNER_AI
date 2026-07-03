@@ -70,9 +70,19 @@ Focus: make stored product research easier to review in a browser.
 - Used inline HTML, CSS, and simple JavaScript.
 - Kept the feature dependency-free and compatible with the existing SQLite workflow.
 
+### v1.5 - Rich Etsy Product Data - Completed
+
+Focus: improve the optional Etsy integration while keeping mock fallback and older databases working.
+
+- Inspected the live Etsy listing, image, and shop response shapes.
+- Stored optional Etsy fields with safe SQLite migrations.
+- Imported listing ID, product URL, image URL, shop name, shop URL, currency, and price when available.
+- Displayed clickable product links and thumbnails in the Streamlit dashboard.
+- Kept CLI, CSV import, mock fallback, and older product rows compatible.
+
 ## Future Roadmap
 
-### v1.5 - Better Trend And Competition Scoring
+### v1.6 - Better Trend And Competition Scoring
 
 Focus: improve scoring quality while keeping the rules transparent.
 

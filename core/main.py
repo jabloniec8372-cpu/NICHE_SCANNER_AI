@@ -8,13 +8,14 @@ from market_scanner import scan_keyword
 from report_exporter import export_products_to_csv
 from keyword_analyzer import analyze_keywords
 from engine.niche_dna_engine import build_niche_dna
+from product_utils import product_to_dict
 from scoring import calculate_score
 from opportunity_finder import find_hidden_opportunities
 
 
 def show_menu():
     print("===================================")
-    print("     NICHE SCANNER AI v1.4")
+    print("     NICHE SCANNER AI v1.5")
     print("===================================")
     print()
     print("1. Import sample products")
@@ -96,7 +97,13 @@ def scan_keyword_menu():
             product["platform"],
             product["price"],
             product["reviews"],
-            product.get("rating", 0)
+            product.get("rating", 0),
+            product.get("listing_id", ""),
+            product.get("product_url", ""),
+            product.get("image_url", ""),
+            product.get("shop_name", ""),
+            product.get("shop_url", ""),
+            product.get("currency", "")
         )
 
         if was_inserted:
@@ -119,14 +126,27 @@ def show_report():
         return
 
     for product in products:
-        title, platform, price, reviews, rating = product
+        product_data = product_to_dict(product)
+        title = product_data["title"]
+        platform = product_data["platform"]
+        price = product_data["price"]
+        reviews = product_data["reviews"]
+        rating = product_data["rating"]
         score = calculate_score(price, reviews, rating)
 
         print(f"Title: {title}")
         print(f"Platform: {platform}")
-        print(f"Price: ${price}")
+        print(f"Price: {_format_price(price, product_data['currency'])}")
         print(f"Reviews: {reviews}")
         print(f"Rating: {rating}")
+        if product_data["listing_id"]:
+            print(f"Listing ID: {product_data['listing_id']}")
+        if product_data["product_url"]:
+            print(f"Product URL: {product_data['product_url']}")
+        if product_data["shop_name"]:
+            print(f"Shop: {product_data['shop_name']}")
+        if product_data["shop_url"]:
+            print(f"Shop URL: {product_data['shop_url']}")
         print(f"Trend Score: {score['total_score']}/100")
         print(f"Review Score: {score['review_score']}/50")
         print(f"Price Score: {score['price_score']}/30")
@@ -173,7 +193,8 @@ def show_niche_dna():
     print()
 
     for product in products:
-        title, platform, price, reviews, rating = product
+        product_data = product_to_dict(product)
+        title = product_data["title"]
         dna = build_niche_dna(title)
 
         print(f"Title: {dna['title']}")
@@ -198,7 +219,12 @@ def show_top_niches():
     ranked_products = []
 
     for product in products:
-        title, platform, price, reviews, rating = product
+        product_data = product_to_dict(product)
+        title = product_data["title"]
+        platform = product_data["platform"]
+        price = product_data["price"]
+        reviews = product_data["reviews"]
+        rating = product_data["rating"]
         score = calculate_score(price, reviews, rating)
 
         ranked_products.append({
@@ -207,6 +233,7 @@ def show_top_niches():
             "price": price,
             "reviews": reviews,
             "rating": rating,
+            "currency": product_data["currency"],
             "score": score
         })
 
@@ -222,7 +249,7 @@ def show_top_niches():
     for index, item in enumerate(ranked_products[:10], start=1):
         print(f"{index}. {item['title']}")
         print(f"   Platform: {item['platform']}")
-        print(f"   Price: ${item['price']}")
+        print(f"   Price: {_format_price(item['price'], item['currency'])}")
         print(f"   Reviews: {item['reviews']}")
         print(f"   Rating: {item['rating']}")
         print(f"   Competition: {item['score']['competition']}")
@@ -232,6 +259,13 @@ def show_top_niches():
         print()
 
     print()
+
+
+def _format_price(price, currency=""):
+    if currency:
+        return f"{currency} {price:.2f}"
+
+    return f"${price:.2f}"
 
 
 def show_hidden_opportunities():

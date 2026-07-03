@@ -2,9 +2,9 @@
 
 NicheScanner AI is a beginner-friendly Python command-line application for researching print-on-demand niche ideas. It stores product examples, imports user CSV research files, scans mock keyword results, scores demand signals, estimates competition, detects simple Niche DNA categories, finds promising opportunities, exports research data to CSV, and generates a static HTML dashboard.
 
-Current version: v1.4
+Current version: v1.5
 
-Release v1.4 adds a static HTML dashboard export so users can review stored product data in a browser. The project remains offline, terminal-based, dependency-free, and built with the Python standard library.
+Release v1.5 improves the optional Etsy API integration. Keyword scans can now store and display richer Etsy product data, including product thumbnails, product links, listing IDs, shop names, shop links, currency, and price when Etsy returns those fields.
 
 ## What It Does
 
@@ -12,7 +12,7 @@ NicheScanner AI provides a small research workflow for product niche exploration
 
 1. Import sample products with title, platform, price, reviews, and rating.
 2. Import your own product research from a CSV file.
-3. Scan a keyword using offline mock product results.
+3. Scan a keyword using Etsy when configured, with a safe mock fallback.
 4. Store products in a local SQLite database.
 5. Generate terminal reports with scores, rating details, competition, and opportunity labels.
 6. Analyze common keywords in product titles.
@@ -21,21 +21,23 @@ NicheScanner AI provides a small research workflow for product niche exploration
 9. Find hidden opportunities based on demand, price, and score.
 10. Export product research to a CSV report.
 11. Generate a static HTML dashboard.
+12. Review richer product details in the Streamlit dashboard.
 
 ## Current Features
 
 - CLI menu: beginner-friendly terminal menu with sample import, CSV import, report, scan, clear, export, dashboard, trends, Niche DNA, Top Niches, Hidden Opportunities, and exit options.
 - CSV Product Import: imports user product research files with `title`, `price`, `reviews`, and `rating` columns.
-- Keyword Scanner: offline mock keyword scanner in `core/market_scanner.py` for local testing without scraping or APIs.
+- Keyword Scanner: optional Etsy keyword search with safe mock fallback in `core/connectors/`.
+- Etsy Product Details: stores listing ID, product URL, image URL, shop name, shop URL, currency, and price when available.
 - Niche DNA Engine: rule-based product type, topic, subtopic, and detected keyword classification using `core/engine/` modules and `core/knowledge/knowledge_base.json`.
 - Competition Engine: simple competition labels calculated in `core/scoring.py` from review counts: Very High, High, Medium, or Low.
 - Opportunity Finder: identifies products with strong demand, healthy pricing, and good niche scores in `core/opportunity_finder.py`.
 - Rating and scoring logic: products support ratings, and scoring includes review score, price score, rating score, total score, competition, and opportunity.
 - CSV Export: exports product details, rating, scores, competition, opportunity, and Niche DNA fields to `reports/nichescanner_report.csv`.
 - HTML Dashboard: generates `reports/dashboard.html` with summary cards and a sortable product table.
-- SQLite storage: stores products locally in `data/nichescanner.db`, with safe migration support for the `rating` column.
+- SQLite storage: stores products locally in `data/nichescanner.db`, with safe migration support for `rating` and optional Etsy detail columns.
 - Keyword trends: counts repeated words in stored product titles.
-- No external dependencies: uses only the Python standard library.
+- Mock fallback: keeps keyword scanning usable when Etsy is not configured or an external request fails.
 
 ## Installation On Windows
 
@@ -82,7 +84,7 @@ NicheScanner AI uses a Connector Manager in `core/connectors/connector_manager.p
 
 Current connector behavior:
 
-- Etsy: used for product search only when `ETSY_KEYSTRING` is configured and the API request succeeds.
+- Etsy: used for product search only when `ETSY_KEYSTRING` and `ETSY_SHARED_SECRET` are configured and the API request succeeds.
 - Google Trends: used only when optional `pytrends` is installed and the request succeeds.
 - eBay: planned future connector.
 - Pinterest: planned future connector.
@@ -90,15 +92,16 @@ Current connector behavior:
 All external integrations are optional. If an API key, optional package, or external request is unavailable, the app falls back safely to mock product data or fallback trend values.
 ## Optional Etsy API Integration
 
-NicheScanner AI can optionally use Etsy Open API v3 for keyword scans. The Etsy API key request is currently expected to be pending personal approval, so the app does not require a working key yet.
+NicheScanner AI can optionally use Etsy Open API v3 for keyword scans. The app does not require Etsy credentials; when credentials are missing or a request fails, it falls back to mock product data.
 
-To configure Etsy later, set `ETSY_KEYSTRING` as an environment variable or in a local `.env` file:
+To configure Etsy, set `ETSY_KEYSTRING` and `ETSY_SHARED_SECRET` as environment variables or in a local `.env` file:
 
 ```text
 ETSY_KEYSTRING=your_etsy_keystring_here
+ETSY_SHARED_SECRET=your_etsy_shared_secret_here
 ```
 
-Do not commit `.env` or any API keys. When `ETSY_KEYSTRING` is missing, invalid, pending, or the Etsy request fails, NicheScanner AI automatically falls back to the existing mock product data so the app keeps working.
+Do not commit `.env` or any API keys. When Etsy search succeeds, NicheScanner AI imports product title, platform, price, currency, listing ID, product URL, product image, shop name, and shop URL when those fields are available from Etsy. If image or shop enrichment fails for an individual listing, the product is still imported with the fields that were available.
 
 ## Optional Google Trends Integration
 
@@ -161,11 +164,17 @@ The dashboard includes summary cards for:
 
 It also includes a product table with:
 
+- Image thumbnail
 - Title
 - Platform
 - Price
+- Currency
 - Rating
 - Reviews
+- Listing ID
+- Product URL
+- Shop name
+- Shop URL
 - Score
 - Competition
 - Opportunity
@@ -199,6 +208,8 @@ Expected result:
 - Hidden Opportunities runs without crashing.
 - CSV export creates `reports/nichescanner_report.csv`.
 
+For an Etsy-enabled scan, the Streamlit dashboard also shows clickable product links and product thumbnails when Etsy returns image URLs.
+
 ## CSV Export
 
 CSV reports are written to:
@@ -212,8 +223,14 @@ The export includes:
 - Title
 - Platform
 - Price
+- Currency
 - Rating
 - Reviews
+- Listing ID
+- Product URL
+- Image URL
+- Shop Name
+- Shop URL
 - Trend Score
 - Review Score
 - Price Score
@@ -244,6 +261,7 @@ NICHE_SCANNER_AI/
     keyword_analyzer.py        Product title keyword analysis
     report_exporter.py         CSV report export
     sample_data.py             Reserved for sample data helpers
+    product_utils.py           Shared product row compatibility helpers
 
     config/
       categories.py            Product type keyword configuration
@@ -295,20 +313,20 @@ Completed:
 - v1.2.1: GitHub polish and documentation update
 - v1.3: CSV import for user product research files
 - v1.4: Static HTML dashboard export
+- v1.5: Rich Etsy product data import and dashboard display
 
 Future direction:
 
-- v1.5: Better trend and competition scoring
+- v1.6: Better trend and competition scoring
 - v2.0: Optional AI-assisted niche recommendations
 
 ## Limitations
 
-- Keyword scanning uses mock data only.
+- Keyword scanning uses Etsy only when credentials are configured and Etsy requests succeed.
 - CSV import expects the required columns listed above.
 - Imported CSV rows use `CSV Import` as the platform.
 - The HTML dashboard is a static generated file.
 - No live marketplace scraping is implemented.
-- No external marketplace APIs are implemented.
 - No external AI recommendations are implemented.
 - The scoring system is intentionally simple and transparent.
 - The app is currently terminal-based only.
@@ -360,3 +378,10 @@ Future direction:
 - Added dashboard summary cards for total products, average score, best product, and hidden opportunities.
 - Added sortable dashboard product table with score, competition, opportunity, and Niche DNA fields.
 - Updated README and roadmap for the v1.4 release.
+
+### v1.5
+
+- Added safe SQLite columns for optional Etsy listing details.
+- Enriched Etsy imports with listing ID, product URL, image URL, shop name, shop URL, currency, and price when available.
+- Displayed product thumbnails and clickable product links in the Streamlit dashboard.
+- Kept mock fallback and older SQLite databases compatible.

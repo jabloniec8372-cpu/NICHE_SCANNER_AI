@@ -2,6 +2,7 @@
 from pathlib import Path
 
 from engine.niche_dna_engine import build_niche_dna
+from product_utils import product_to_dict
 from scoring import calculate_score
 
 
@@ -18,8 +19,14 @@ def export_products_to_csv(products):
             "Title",
             "Platform",
             "Price",
+            "Currency",
             "Rating",
             "Reviews",
+            "Listing ID",
+            "Product URL",
+            "Image URL",
+            "Shop Name",
+            "Shop URL",
             "Trend Score",
             "Review Score",
             "Price Score",
@@ -34,7 +41,12 @@ def export_products_to_csv(products):
 
         for product in products:
 
-            title, platform, price, reviews, rating = product
+            product_data = product_to_dict(product)
+            title = product_data["title"]
+            platform = product_data["platform"]
+            price = product_data["price"]
+            reviews = product_data["reviews"]
+            rating = product_data["rating"]
 
             score = calculate_score(price, reviews, rating)
 
@@ -44,8 +56,14 @@ def export_products_to_csv(products):
                 title,
                 platform,
                 price,
+                product_data["currency"],
                 rating,
                 reviews,
+                product_data["listing_id"],
+                product_data["product_url"],
+                product_data["image_url"],
+                product_data["shop_name"],
+                product_data["shop_url"],
                 score["total_score"],
                 score["review_score"],
                 score["price_score"],

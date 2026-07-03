@@ -3,6 +3,7 @@ from pathlib import Path
 
 from engine.niche_dna_engine import build_niche_dna
 from opportunity_finder import find_hidden_opportunities
+from product_utils import product_to_dict
 from scoring import calculate_score
 
 
@@ -28,7 +29,12 @@ def _build_dashboard_rows(products):
     rows = []
 
     for product in products:
-        title, platform, price, reviews, rating = product
+        product_data = product_to_dict(product)
+        title = product_data["title"]
+        platform = product_data["platform"]
+        price = product_data["price"]
+        reviews = product_data["reviews"]
+        rating = product_data["rating"]
 
         # Reuse the same scoring and Niche DNA logic used by the CLI reports.
         score = calculate_score(price, reviews, rating)
@@ -45,7 +51,13 @@ def _build_dashboard_rows(products):
             "opportunity": score["opportunity"],
             "product_type": dna["product_type"],
             "main_topic": dna["main_topic"],
-            "subtopic": dna["subtopic"]
+            "subtopic": dna["subtopic"],
+            "listing_id": product_data["listing_id"],
+            "product_url": product_data["product_url"],
+            "image_url": product_data["image_url"],
+            "shop_name": product_data["shop_name"],
+            "shop_url": product_data["shop_url"],
+            "currency": product_data["currency"]
         })
 
     return rows
@@ -165,6 +177,20 @@ def _build_html(summary, rows):
         tr:hover td {{
             background: #f8fafc;
         }}
+
+        img.thumbnail {{
+            width: 64px;
+            height: 64px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #d9e2ec;
+            background: #f8fafc;
+        }}
+
+        a {{
+            color: #1d4ed8;
+            font-weight: bold;
+        }}
     </style>
 </head>
 <body>
@@ -197,17 +223,21 @@ def _build_html(summary, rows):
             <table id="product-table">
                 <thead>
                     <tr>
-                        <th onclick="sortTable(0)">Title</th>
-                        <th onclick="sortTable(1)">Platform</th>
-                        <th onclick="sortTable(2)">Price</th>
-                        <th onclick="sortTable(3)">Rating</th>
-                        <th onclick="sortTable(4)">Reviews</th>
-                        <th onclick="sortTable(5)">Score</th>
-                        <th onclick="sortTable(6)">Competition</th>
-                        <th onclick="sortTable(7)">Opportunity</th>
-                        <th onclick="sortTable(8)">Product Type</th>
-                        <th onclick="sortTable(9)">Main Topic</th>
-                        <th onclick="sortTable(10)">Subtopic</th>
+                        <th>Image</th>
+                        <th onclick="sortTable(1)">Title</th>
+                        <th onclick="sortTable(2)">Platform</th>
+                        <th onclick="sortTable(3)">Price</th>
+                        <th onclick="sortTable(4)">⭐ Shop Rating</th>
+                        <th onclick="sortTable(5)">Shop Reviews</th>
+                        <th onclick="sortTable(6)">Score</th>
+                        <th onclick="sortTable(7)">Competition</th>
+                        <th onclick="sortTable(8)">Opportunity</th>
+                        <th onclick="sortTable(9)">Product</th>
+                        <th onclick="sortTable(10)">Shop</th>
+                        <th onclick="sortTable(11)">Listing ID</th>
+                        <th onclick="sortTable(12)">Product Type</th>
+                        <th onclick="sortTable(13)">Main Topic</th>
+                        <th onclick="sortTable(14)">Subtopic</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -255,15 +285,42 @@ def _build_html(summary, rows):
 
 def _build_table_row(row):
     # Escape every displayed value so product titles cannot break the HTML.
+    image_html = ""
+    if row["image_url"]:
+        image_html = (
+            f'<img class="thumbnail" src="{escape(str(row["image_url"]), quote=True)}" '
+            f'alt="{escape(str(row["title"]), quote=True)}">'
+        )
+
+    product_link_html = ""
+    if row["product_url"]:
+        product_link_html = (
+            f'<a href="{escape(str(row["product_url"]), quote=True)}" target="_blank" '
+            f'rel="noopener noreferrer">Open</a>'
+        )
+
+    shop_text = escape(str(row["shop_name"]))
+    if row["shop_url"]:
+        shop_text = (
+            f'<a href="{escape(str(row["shop_url"]), quote=True)}" target="_blank" '
+            f'rel="noopener noreferrer">{shop_text or "Shop"}</a>'
+        )
+
+    price_text = f'{row["currency"]} {row["price"]}'.strip()
+
     return f"""                    <tr>
+                        <td>{image_html}</td>
                         <td>{escape(str(row["title"]))}</td>
                         <td>{escape(str(row["platform"]))}</td>
-                        <td>${escape(str(row["price"]))}</td>
+                        <td>{escape(str(price_text))}</td>
                         <td>{escape(str(row["rating"]))}</td>
                         <td>{escape(str(row["reviews"]))}</td>
                         <td>{escape(str(row["score"]))}</td>
                         <td>{escape(str(row["competition"]))}</td>
                         <td>{escape(str(row["opportunity"]))}</td>
+                        <td>{product_link_html}</td>
+                        <td>{shop_text}</td>
+                        <td>{escape(str(row["listing_id"]))}</td>
                         <td>{escape(str(row["product_type"]))}</td>
                         <td>{escape(str(row["main_topic"]))}</td>
                         <td>{escape(str(row["subtopic"]))}</td>

@@ -5,7 +5,7 @@ from connectors.google_trends import (
 )
 
 
-def search_all_sources(keyword, product_limit=10):
+def search_all_sources(keyword, product_limit=50):
     etsy_products = search_etsy_products(keyword, limit=product_limit)
 
     if etsy_products:
@@ -58,7 +58,8 @@ def get_trend_summary(keyword):
 
 
 def _get_mock_products(keyword):
-    return [
+    print("[INFO] Using mock product data fallback.")
+    products = [
         {
             "title": f"Funny {keyword} Vintage Shirt",
             "platform": "Etsy",
@@ -90,3 +91,14 @@ def _get_mock_products(keyword):
             "reviews": 485,
         },
     ]
+
+    for product in products:
+        product.setdefault("rating", 0)
+        product.setdefault("listing_id", "")
+        product.setdefault("product_url", "")
+        product.setdefault("image_url", "")
+        product.setdefault("shop_name", "")
+        product.setdefault("shop_url", "")
+        product.setdefault("currency", "USD")
+
+    return products

@@ -14,9 +14,10 @@ from market_scanner import scan_keyword
 from scoring import calculate_score
 from opportunity_finder import find_hidden_opportunities
 from connectors.connector_manager import get_connector_status, get_trend_summary
+from product_utils import product_to_dict
 
 
-APP_VERSION = "v1.4"
+APP_VERSION = "v1.5"
 
 
 st.set_page_config(
@@ -152,15 +153,26 @@ def build_product_rows(products):
     rows = []
 
     for product in products:
-        title, platform, price, reviews, rating = product
+        product_data = product_to_dict(product)
+        title = product_data["title"]
+        platform = product_data["platform"]
+        price = product_data["price"]
+        reviews = product_data["reviews"]
+        rating = product_data["rating"]
         score = calculate_score(price, reviews, rating)
 
         rows.append({
+            "Image": product_data["image_url"],
             "Title": title,
             "Platform": platform,
             "Price": price,
+            "Currency": product_data["currency"],
             "Rating": rating,
             "Reviews": reviews,
+            "Product Link": product_data["product_url"],
+            "Shop": product_data["shop_name"],
+            "Shop Link": product_data["shop_url"],
+            "Listing ID": product_data["listing_id"],
             "Score": score["total_score"],
             "Competition": score["competition"],
             "Opportunity": score["opportunity"],
@@ -299,7 +311,9 @@ def render_scan_form():
             st.warning("Please enter a keyword.")
         else:
             with st.spinner("Scanning products..."):
+                print("SCAN EXECUTED")
                 products = scan_keyword(keyword.strip())
+                print("SCAN FINISHED")
                 imported_count = 0
 
                 for product in products:
@@ -309,6 +323,12 @@ def render_scan_form():
                         product["price"],
                         product["reviews"],
                         product.get("rating", 0),
+                        product.get("listing_id", ""),
+                        product.get("product_url", ""),
+                        product.get("image_url", ""),
+                        product.get("shop_name", ""),
+                        product.get("shop_url", ""),
+                        product.get("currency", ""),
                     )
 
                     if was_inserted:
@@ -331,8 +351,18 @@ def render_product_table(df):
         width="stretch",
         hide_index=True,
         column_config={
-            "Price": st.column_config.NumberColumn("Price", format="$%.2f"),
-            "Rating": st.column_config.NumberColumn("Rating", format="%.1f"),
+            "Image": st.column_config.ImageColumn("Image", width="small"),
+            "Price": st.column_config.NumberColumn("Price", format="%.2f"),
+            "Product Link": st.column_config.LinkColumn(
+                "Product",
+                display_text="Open"
+            ),
+            "Shop Link": st.column_config.LinkColumn(
+                "Shop URL",
+                display_text="Open"
+            ),
+            "Rating": st.column_config.NumberColumn("⭐ Shop Rating", format="%.1f"),
+            "Reviews": st.column_config.NumberColumn("Shop Reviews"),
             "Score": st.column_config.ProgressColumn(
                 "Score",
                 min_value=0,
@@ -443,11 +473,21 @@ def render_hidden_opportunities(opportunities):
         with st.expander(f"{title} | Score {total_score}/100", expanded=False):
             st.markdown('<div class="opportunity-card">', unsafe_allow_html=True)
 
+            if item.get("image_url"):
+                st.image(item["image_url"], width=120)
+
             col1, col2, col3, col4 = st.columns(4)
             col1.metric("Platform", item["platform"])
-            col2.metric("Price", f"${item['price']:.2f}")
-            col3.metric("Reviews", item["reviews"])
-            col4.metric("Rating", item["rating"])
+            col2.metric("Price", format_price(item["price"], item.get("currency", "")))
+            col3.metric("Shop Reviews", item["reviews"])
+            col4.metric("⭐ Shop Rating", item["rating"])
+
+            if item.get("product_url"):
+                st.link_button("Open product", item["product_url"])
+
+            if item.get("shop_url"):
+                shop_label = item.get("shop_name") or "Open shop"
+                st.link_button(shop_label, item["shop_url"])
 
             st.write(f"**Competition:** {item['score']['competition']}")
             st.write("**Reasons:**")
@@ -456,6 +496,13 @@ def render_hidden_opportunities(opportunities):
                 st.write(f"- {reason}")
 
             st.markdown("</div>", unsafe_allow_html=True)
+
+
+def format_price(price, currency=""):
+    if currency:
+        return f"{currency} {price:.2f}"
+
+    return f"${price:.2f}"
 
 
 create_database()

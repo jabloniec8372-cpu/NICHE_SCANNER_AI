@@ -1,22 +1,56 @@
 from collections import Counter
+import re
 
 
 STOP_WORDS = {
-    "the", "and", "for", "with", "a", "an", "of", "to", "in",
-    "shirt", "tshirt", "t-shirt"
+    "the",
+    "and",
+    "for",
+    "with",
+    "a",
+    "an",
+    "of",
+    "to",
+    "in",
+    "on",
+    "your",
+    "my",
+    "our",
+    "is",
+    "are",
+    "this",
+    "that",
+    "shirt",
+    "tshirt",
+    "t-shirt",
+    "tee",
+    "hoodie",
+    "sweatshirt",
+    "mug",
+    "poster",
+    "sticker",
+    "gift",
+    "custom",
+    "digital",
+    "download",
 }
 
 
 def analyze_keywords(products):
-    all_words = []
+    counter = Counter()
 
     for product in products:
-        title = product[0]
-        words = title.lower().replace("-", " ").split()
+        title = product[0].lower()
+
+        words = re.findall(r"[a-zA-Z']+", title)
 
         for word in words:
-            clean_word = word.strip(".,!?()[]{}")
-            if clean_word and clean_word not in STOP_WORDS:
-                all_words.append(clean_word)
+            if len(word) < 3:
+                continue
 
-    return Counter(all_words).most_common(20)
+            if word in STOP_WORDS:
+                continue
+
+            counter[word] += 1
+
+    return counter.most_common(20)
