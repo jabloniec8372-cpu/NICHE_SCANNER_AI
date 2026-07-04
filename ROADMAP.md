@@ -80,19 +80,20 @@ Focus: improve the optional Etsy integration while keeping mock fallback and old
 - Displayed clickable product links and thumbnails in the Streamlit dashboard.
 - Kept CLI, CSV import, mock fallback, and older product rows compatible.
 
-## Future Roadmap
-
-### v1.6 - eBay Marketplace Integration
+### v1.6 - eBay Marketplace Integration - Completed
 
 Focus: add eBay as the next marketplace while keeping the connector system clean and reusable.
 
-- Integrate the official eBay Browse API.
-- Search products by keyword.
-- Store eBay products in SQLite.
-- Normalize Etsy and eBay product models.
-- Display eBay products in the HTML dashboard.
-- Add platform filtering.
-- Keep Connector Manager architecture.
+- Integrated the official eBay Browse API.
+- Added keyword product search for eBay.
+- Added temporary `EBAY_APPLICATION_TOKEN` support for application-token testing.
+- Kept the existing OAuth client credentials flow for `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET`.
+- Normalized Etsy and eBay product models for scanner results.
+- Updated the Connector Manager to aggregate Etsy and eBay products.
+- Kept mock fallback only when both Etsy and eBay return no products.
+- Preserved scoring, dashboard behavior, and database schema compatibility.
+
+## Future Roadmap
 
 ### v1.7 - Multi Marketplace Intelligence
 
