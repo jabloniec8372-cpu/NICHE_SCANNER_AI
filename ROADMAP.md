@@ -82,20 +82,46 @@ Focus: improve the optional Etsy integration while keeping mock fallback and old
 
 ## Future Roadmap
 
-### v1.6 - Better Trend And Competition Scoring
+### v1.6 - eBay Marketplace Integration
 
-Focus: improve scoring quality while keeping the rules transparent.
+Focus: add eBay as the next marketplace while keeping the connector system clean and reusable.
 
-- Review price, review-count, and rating thresholds.
-- Improve competition scoring beyond simple review-count labels.
-- Consider keyword frequency or product type as additional signals.
-- Keep scoring logic reusable and easy to test.
+- Integrate the official eBay Browse API.
+- Search products by keyword.
+- Store eBay products in SQLite.
+- Normalize Etsy and eBay product models.
+- Display eBay products in the HTML dashboard.
+- Add platform filtering.
+- Keep Connector Manager architecture.
 
-### v2.0 - Optional AI-Assisted Niche Recommendations
+### v1.7 - Multi Marketplace Intelligence
 
-Focus: optionally add AI-assisted suggestions after the core research workflow is stable.
+Focus: compare marketplaces and identify stronger cross-platform opportunities.
 
-- Generate niche ideas from existing product and keyword data.
-- Explain why a niche might be promising.
-- Keep AI features optional.
-- Avoid replacing transparent scoring and keyword analysis with unexplained recommendations.
+- Cross-platform comparison.
+- Compare Etsy vs eBay opportunities.
+- Detect products available on multiple marketplaces.
+- Unified Opportunity Score.
+- Marketplace statistics.
+- Platform comparison dashboard.
+
+### v1.8 - Advanced Scoring Engine
+
+Focus: improve scoring quality while keeping the rules transparent and understandable.
+
+- Improved demand scoring.
+- Better competition analysis.
+- Trend scoring.
+- Seasonality detection.
+- Sales confidence score.
+- Opportunity Score 2.0.
+
+### v2.0 - AI Niche Intelligence
+
+Focus: add optional AI-assisted market intelligence after multi-marketplace support is stable.
+
+- AI-powered niche recommendations.
+- AI market summaries.
+- AI keyword clustering.
+- AI product explanations.
+- AI opportunity forecasting.

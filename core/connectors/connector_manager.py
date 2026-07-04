@@ -1,3 +1,4 @@
+from connectors.ebay_connector import is_ebay_configured
 from connectors.etsy_api import is_etsy_configured, search_etsy_products
 from connectors.google_trends import (
     get_google_trend_summary,
@@ -21,6 +22,7 @@ def search_all_sources(keyword, product_limit=50):
 
 def get_connector_status():
     etsy_configured = is_etsy_configured()
+    ebay_configured = is_ebay_configured()
     google_trends_configured = is_google_trends_available()
 
     return {
@@ -33,8 +35,8 @@ def get_connector_status():
             "status": "Available" if google_trends_configured else "Optional dependency missing"
         },
         "ebay": {
-            "configured": False,
-            "status": "Planned"
+            "configured": ebay_configured,
+            "status": "Configured" if ebay_configured else "eBay API not configured."
         },
         "pinterest": {
             "configured": False,

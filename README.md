@@ -86,7 +86,7 @@ Current connector behavior:
 
 - Etsy: used for product search only when `ETSY_KEYSTRING` and `ETSY_SHARED_SECRET` are configured and the API request succeeds.
 - Google Trends: used only when optional `pytrends` is installed and the request succeeds.
-- eBay: planned future connector.
+- eBay: optional Browse API infrastructure is prepared and reports `eBay API not configured.` until credentials are added.
 - Pinterest: planned future connector.
 
 All external integrations are optional. If an API key, optional package, or external request is unavailable, the app falls back safely to mock product data or fallback trend values.
@@ -102,6 +102,19 @@ ETSY_SHARED_SECRET=your_etsy_shared_secret_here
 ```
 
 Do not commit `.env` or any API keys. When Etsy search succeeds, NicheScanner AI imports product title, platform, price, currency, listing ID, product URL, product image, shop name, shop URL, Shop Rating, and Shop Reviews when those fields are available from Etsy. Etsy enrichment uses the batch listing endpoint so product images and shop data are fetched with a single batch request instead of one request per product. This keeps typical Etsy scans near 7-8 seconds instead of approximately 2 minutes. Etsy public API batch responses do not provide listing-level aggregate ratings, so Shop Rating and Shop Reviews represent the shop rather than the individual product listing.
+
+## Optional eBay API Infrastructure
+
+NicheScanner AI v1.6 prepares the eBay Browse API connector infrastructure. Marketplace import logic is not enabled yet, so the existing Etsy and mock fallback scan behavior remains unchanged.
+
+To prepare eBay credentials for future marketplace support, set `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET` as environment variables or in a local `.env` file:
+
+```text
+EBAY_CLIENT_ID=your_ebay_client_id_here
+EBAY_CLIENT_SECRET=your_ebay_client_secret_here
+```
+
+The app does not require eBay credentials to run. When these values are missing, the eBay connector reports `eBay API not configured.` and fails safely.
 
 ## Optional Google Trends Integration
 
@@ -317,8 +330,10 @@ Completed:
 
 Future direction:
 
-- v1.6: Better trend and competition scoring
-- v2.0: Optional AI-assisted niche recommendations
+- v1.6: eBay marketplace integration
+- v1.7: Multi marketplace intelligence
+- v1.8: Advanced scoring engine
+- v2.0: AI niche intelligence
 
 ## Limitations
 
