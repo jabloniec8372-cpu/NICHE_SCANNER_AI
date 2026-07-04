@@ -29,11 +29,53 @@ def get_ebay_client_secret():
     return _read_value_from_env_file("EBAY_CLIENT_SECRET")
 
 
-def is_ebay_configured():
-    return bool(get_ebay_client_id() and get_ebay_client_secret())
+def get_ebay_application_token():
+    application_token = os.environ.get("EBAY_APPLICATION_TOKEN", "").strip()
 
+    if application_token:
+        return application_token
+
+    return _read_value_from_env_file("EBAY_APPLICATION_TOKEN")
+
+
+def is_ebay_configured():
+    return bool(get_ebay_application_token() or (get_ebay_client_id() and get_ebay_client_secret()))
+
+def check_ebay_connection(keyword="cat mug"):
+    configured = is_ebay_configured()
+    result = {
+        "configured": configured,
+        "oauth_token": False,
+        "search": False,
+        "products_found": 0,
+        "message": "eBay API not configured.",
+    }
+
+    if not configured:
+        print("eBay API not configured.")
+        return result
+
+    access_token = get_ebay_access_token()
+
+    if not access_token:
+        result["message"] = "eBay OAuth token could not be retrieved."
+        return result
+
+    result["oauth_token"] = True
+    products = search_ebay_products(keyword, limit=1)
+    result["search"] = True
+    result["products_found"] = len(products)
+    result["message"] = "eBay API check completed."
+
+    return result
 
 def get_ebay_access_token():
+    application_token = get_ebay_application_token()
+
+    if application_token:
+        print("[INFO] eBay application token detected; OAuth request skipped.")
+        return application_token
+
     client_id = get_ebay_client_id()
     client_secret = get_ebay_client_secret()
 
@@ -171,6 +213,7 @@ def _normalize_item(item):
     image_url = _extract_image_url(item)
     seller_name = _extract_seller_name(item)
     condition = _clean_value(item.get("condition"))
+    category = _extract_category(item)
     shipping_price = _extract_shipping_price(item)
 
     return {
@@ -181,8 +224,10 @@ def _normalize_item(item):
         "item_id": item_id,
         "item_url": item_url,
         "image_url": image_url,
+        "seller": seller_name,
         "seller_name": seller_name,
         "condition": condition,
+        "category": category,
         "shipping_price": shipping_price,
         "reviews": _extract_seller_feedback_score(item),
         "rating": _extract_seller_feedback_percentage(item),
@@ -263,6 +308,17 @@ def _extract_seller_feedback_percentage(item):
     return _safe_float(seller_data.get("feedbackPercentage"), 0)
 
 
+def _extract_category(item):
+    categories = item.get("categories", [])
+
+    if isinstance(categories, list) and categories:
+        first_category = categories[0]
+
+        if isinstance(first_category, dict):
+            return _clean_value(first_category.get("categoryName"))
+
+    return _clean_value(item.get("categoryPath"))
+
 def _get_requests_module():
     try:
         import requests
@@ -332,3 +388,5 @@ def _clean_value(value):
         return ""
 
     return str(value).strip()
+
+

@@ -27,7 +27,7 @@ NicheScanner AI provides a small research workflow for product niche exploration
 
 - CLI menu: beginner-friendly terminal menu with sample import, CSV import, report, scan, clear, export, dashboard, trends, Niche DNA, Top Niches, Hidden Opportunities, and exit options.
 - CSV Product Import: imports user product research files with `title`, `price`, `reviews`, and `rating` columns.
-- Keyword Scanner: optional Etsy keyword search with safe mock fallback in `core/connectors/`.
+- Keyword Scanner: optional Etsy and eBay keyword search with safe mock fallback in `core/connectors/`.
 - Etsy Product Details: stores listing ID, product URL, image URL, shop name, shop URL, currency, price, Shop Rating, and Shop Reviews when available.
 - Niche DNA Engine: rule-based product type, topic, subtopic, and detected keyword classification using `core/engine/` modules and `core/knowledge/knowledge_base.json`.
 - Competition Engine: simple competition labels calculated in `core/scoring.py` from review counts: Very High, High, Medium, or Low.
@@ -75,7 +75,8 @@ The app opens this interactive menu:
 9. Show Niche DNA
 10. Show Top Niches
 11. Hidden Opportunities
-12. Exit
+12. Show connector status
+13. Exit
 ```
 
 ## Connector Manager
@@ -86,7 +87,7 @@ Current connector behavior:
 
 - Etsy: used for product search only when `ETSY_KEYSTRING` and `ETSY_SHARED_SECRET` are configured and the API request succeeds.
 - Google Trends: used only when optional `pytrends` is installed and the request succeeds.
-- eBay: optional Browse API infrastructure is prepared and reports `eBay API not configured.` until credentials are added.
+- eBay: used for product search when Etsy returns no products, `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET` are configured, and the Browse API request succeeds.
 - Pinterest: planned future connector.
 
 All external integrations are optional. If an API key, optional package, or external request is unavailable, the app falls back safely to mock product data or fallback trend values.
@@ -103,18 +104,26 @@ ETSY_SHARED_SECRET=your_etsy_shared_secret_here
 
 Do not commit `.env` or any API keys. When Etsy search succeeds, NicheScanner AI imports product title, platform, price, currency, listing ID, product URL, product image, shop name, shop URL, Shop Rating, and Shop Reviews when those fields are available from Etsy. Etsy enrichment uses the batch listing endpoint so product images and shop data are fetched with a single batch request instead of one request per product. This keeps typical Etsy scans near 7-8 seconds instead of approximately 2 minutes. Etsy public API batch responses do not provide listing-level aggregate ratings, so Shop Rating and Shop Reviews represent the shop rather than the individual product listing.
 
-## Optional eBay API Infrastructure
+## Optional eBay API Integration
 
-NicheScanner AI v1.6 prepares the eBay Browse API connector infrastructure. Marketplace import logic is not enabled yet, so the existing Etsy and mock fallback scan behavior remains unchanged.
+NicheScanner AI v1.6 can optionally use the official eBay Browse API for keyword scans. Etsy is still tried first. If Etsy returns no products and eBay credentials are configured, the Connector Manager tries eBay next. If eBay is not configured or a request fails, the app falls back safely to mock product data.
 
-To prepare eBay credentials for future marketplace support, set `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET` as environment variables or in a local `.env` file:
+To prepare eBay credentials, copy `.env.example` to `.env` in the project root and fill in `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET`:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Your local `.env` file should use this format:
 
 ```text
 EBAY_CLIENT_ID=your_ebay_client_id_here
 EBAY_CLIENT_SECRET=your_ebay_client_secret_here
 ```
 
-The app does not require eBay credentials to run. When these values are missing, the eBay connector reports `eBay API not configured.` and fails safely.
+The app does not require eBay credentials to run. When these values are missing, the eBay connector reports `eBay API not configured.` and fails safely. When eBay search succeeds, NicheScanner AI imports product title, platform, price, currency, item ID, item URL, product image, seller, condition, category, shipping price, seller feedback score, and seller feedback percentage when those fields are available from eBay.
+
+Use menu option `12. Show connector status` to check whether eBay is configured. The check reports whether credentials are present, whether an OAuth token can be retrieved, and whether a small product search can run. Do not commit `.env` or any real API credentials.
 
 ## Optional Google Trends Integration
 
@@ -209,7 +218,7 @@ After starting the app, you can test the sample workflow with:
 10
 11
 6
-12
+13
 ```
 
 Expected result:
@@ -337,11 +346,11 @@ Future direction:
 
 ## Limitations
 
-- Keyword scanning uses Etsy only when credentials are configured and Etsy requests succeed.
+- Keyword scanning uses Etsy first, then eBay when configured, with mock fallback when API requests are unavailable.
 - CSV import expects the required columns listed above.
 - Imported CSV rows use `CSV Import` as the platform.
 - The HTML dashboard is a static generated file.
-- No live marketplace scraping is implemented.
+- No live marketplace scraping is implemented; optional Etsy and eBay support use official APIs.
 - No external AI recommendations are implemented.
 - The scoring system is intentionally simple and transparent.
 - The app is currently terminal-based only.

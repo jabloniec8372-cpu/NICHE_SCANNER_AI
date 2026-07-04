@@ -11,6 +11,8 @@ from engine.niche_dna_engine import build_niche_dna
 from product_utils import product_to_dict
 from scoring import calculate_score
 from opportunity_finder import find_hidden_opportunities
+from connectors.connector_manager import get_connector_status
+from connectors.ebay_connector import check_ebay_connection
 
 
 def show_menu():
@@ -29,7 +31,8 @@ def show_menu():
     print("9. Show Niche DNA")
     print("10. Show Top Niches")
     print("11. Hidden Opportunities")
-    print("12. Exit")
+    print("12. Show connector status")
+    print("13. Exit")
     print()
 
     return input("Choose option: ")
@@ -344,6 +347,32 @@ def clear_products_menu():
     print("[OK] Products cleared.")
     print()
 
+def _format_connector_label(connector_name):
+    if connector_name == "ebay":
+        return "eBay"
+
+    return connector_name.replace("_", " ").title()
+
+def show_connector_status_menu():
+    connector_status = get_connector_status()
+
+    print()
+    print("========== CONNECTOR STATUS ==========")
+    print()
+
+    for connector_name, connector in connector_status.items():
+        label = _format_connector_label(connector_name)
+        print(f"{label}: {connector['status']}")
+
+    print()
+    print("========== EBAY CONNECTION CHECK ==========")
+    ebay_check = check_ebay_connection()
+    print(f"Credentials present: {'Yes' if ebay_check['configured'] else 'No'}")
+    print(f"OAuth token retrieved: {'Yes' if ebay_check['oauth_token'] else 'No'}")
+    print(f"Product search runnable: {'Yes' if ebay_check['search'] else 'No'}")
+    print(f"Products found: {ebay_check['products_found']}")
+    print(f"Message: {ebay_check['message']}")
+    print()
 
 def main():
     create_database()
@@ -385,6 +414,9 @@ def main():
             show_hidden_opportunities()
 
         elif choice == "12":
+            show_connector_status_menu()
+
+        elif choice == "13":
             print()
             print("[OK] Goodbye!")
             break
@@ -397,4 +429,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -258,6 +258,12 @@ def competition_badge(value):
     return f"color: white; background-color: {color}; font-weight: 700;"
 
 
+def format_connector_label(connector_name):
+    if connector_name == "ebay":
+        return "eBay"
+
+    return connector_name.replace("_", " ").title()
+
 def render_sidebar(products, rows, opportunities, connector_status):
     st.sidebar.markdown("## NicheScanner AI")
     st.sidebar.caption(f"Project version: {APP_VERSION}")
@@ -269,7 +275,7 @@ def render_sidebar(products, rows, opportunities, connector_status):
 
     st.sidebar.markdown("### Connectors")
     for connector_name, connector in connector_status.items():
-        label = connector_name.replace("_", " ").title()
+        label = format_connector_label(connector_name)
         st.sidebar.caption(f"{label}: {connector['status']}")
 
     st.sidebar.markdown("### Quick actions")

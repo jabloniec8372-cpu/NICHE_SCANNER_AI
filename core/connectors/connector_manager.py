@@ -1,4 +1,4 @@
-from connectors.ebay_connector import is_ebay_configured
+from connectors.ebay_connector import is_ebay_configured, search_ebay_products
 from connectors.etsy_api import is_etsy_configured, search_etsy_products
 from connectors.google_trends import (
     get_google_trend_summary,
@@ -7,12 +7,25 @@ from connectors.google_trends import (
 
 
 def search_all_sources(keyword, product_limit=50):
+    products = []
+
     etsy_products = search_etsy_products(keyword, limit=product_limit)
 
     if etsy_products:
         print(f"[DEBUG] Connector source used: Etsy")
         print(f"[DEBUG] Products returned: {len(etsy_products)}")
-        return etsy_products
+        products.extend(etsy_products)
+
+    ebay_products = search_ebay_products(keyword, limit=product_limit)
+
+    if ebay_products:
+        print(f"[DEBUG] Connector source used: eBay")
+        print(f"[DEBUG] Products returned: {len(ebay_products)}")
+        products.extend(ebay_products)
+
+    if products:
+        print(f"[DEBUG] Combined products returned: {len(products)}")
+        return products
 
     mock_products = _get_mock_products(keyword)
     print(f"[DEBUG] Connector source used: Mock")
@@ -36,7 +49,7 @@ def get_connector_status():
         },
         "ebay": {
             "configured": ebay_configured,
-            "status": "Configured" if ebay_configured else "eBay API not configured."
+            "status": "Configured" if ebay_configured else "Not configured"
         },
         "pinterest": {
             "configured": False,
