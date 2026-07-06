@@ -17,7 +17,7 @@ from connectors.ebay_connector import check_ebay_connection
 
 def show_menu():
     print("===================================")
-    print("     NICHE SCANNER AI v1.5")
+    print("     NICHE SCANNER AI v1.6.2")
     print("===================================")
     print()
     print("1. Import sample products")
@@ -77,7 +77,6 @@ def import_products_from_csv_menu():
     print(f"[OK] Imported {imported_count} new products from CSV.")
     print()
 
-
 def scan_keyword_menu():
     keyword = input("Enter keyword: ").strip()
 
@@ -93,6 +92,7 @@ def scan_keyword_menu():
 
     products = scan_keyword(keyword)
     imported_count = 0
+    inserted_ebay_count = 0
 
     for product in products:
         was_inserted = add_product(
@@ -111,10 +111,12 @@ def scan_keyword_menu():
 
         if was_inserted:
             imported_count += 1
+            if str(product.get("platform", "")).lower() == "ebay":
+                inserted_ebay_count += 1
 
+    print(f"[DB] inserted ebay products count: {inserted_ebay_count}")
     print(f"[OK] Imported {imported_count} new products.")
     print()
-
 
 def show_report():
     products = get_products()
@@ -135,7 +137,7 @@ def show_report():
         price = product_data["price"]
         reviews = product_data["reviews"]
         rating = product_data["rating"]
-        score = calculate_score(price, reviews, rating)
+        score = calculate_score(price, reviews, rating, platform)
 
         print(f"Title: {title}")
         print(f"Platform: {platform}")
@@ -150,10 +152,13 @@ def show_report():
             print(f"Shop: {product_data['shop_name']}")
         if product_data["shop_url"]:
             print(f"Shop URL: {product_data['shop_url']}")
-        print(f"Trend Score: {score['total_score']}/100")
-        print(f"Review Score: {score['review_score']}/50")
-        print(f"Price Score: {score['price_score']}/30")
-        print(f"Rating Score: {score['rating_score']}/20")
+        print(f"Overall Score: {score['overall_score']}/100")
+        print(f"Score Badge: {score['score_badge']}")
+        print(f"Demand Score: {score['demand_score']}/100")
+        print(f"Competition Score: {score['competition_score']}/100")
+        print(f"Trend Score: {score['trend_score']}/100")
+        print(f"Price Score: {score['price_score']}/100")
+        print(f"Data Confidence: {score['confidence']}")
         print(f"Competition: {score['competition']}")
         print(f"Opportunity: {score['opportunity']}")
         print("------------------------------------------")
@@ -228,7 +233,7 @@ def show_top_niches():
         price = product_data["price"]
         reviews = product_data["reviews"]
         rating = product_data["rating"]
-        score = calculate_score(price, reviews, rating)
+        score = calculate_score(price, reviews, rating, platform)
 
         ranked_products.append({
             "title": title,
@@ -256,7 +261,11 @@ def show_top_niches():
         print(f"   Reviews: {item['reviews']}")
         print(f"   Rating: {item['rating']}")
         print(f"   Competition: {item['score']['competition']}")
-        print(f"   Score: {item['score']['total_score']}/100")
+        print(f"   Overall Score: {item['score']['overall_score']}/100")
+        print(f"   Demand: {item['score']['demand_score']}/100")
+        print(f"   Competition Score: {item['score']['competition_score']}/100")
+        print(f"   Price: {item['score']['price_score']}/100")
+        print(f"   Confidence: {item['score']['confidence']}")
         print(f"   Opportunity: {item['score']['opportunity']}")
         print("--------------------------------")
         print()
@@ -298,7 +307,12 @@ def show_hidden_opportunities():
         print(f"Reviews: {item['reviews']}")
         print(f"Rating: {item['rating']}")
         print(f"Competition: {item['score']['competition']}")
-        print(f"Score: {item['score']['total_score']}/100")
+        print(f"Overall Score: {item['score']['overall_score']}/100")
+        print(f"Demand: {item['score']['demand_score']}/100")
+        print(f"Competition Score: {item['score']['competition_score']}/100")
+        print(f"Trend: {item['score']['trend_score']}/100")
+        print(f"Price: {item['score']['price_score']}/100")
+        print(f"Confidence: {item['score']['confidence']}")
         print("Reasons:")
 
         for reason in item["reasons"]:

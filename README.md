@@ -2,9 +2,9 @@
 
 NicheScanner AI is a beginner-friendly Python command-line application for researching print-on-demand niche ideas. It stores product examples, imports user CSV research files, scans marketplace keyword results, scores demand signals, estimates competition, detects simple Niche DNA categories, finds promising opportunities, exports research data to CSV, and generates a static HTML dashboard.
 
-Current version: v1.6
+Current version: v1.6.2
 
-Release v1.6 adds optional eBay Browse API integration and updates the Connector Manager so Etsy and eBay keyword results are aggregated when both connectors return products. Mock product data is now used only when both live marketplace connectors return no products.
+Release v1.6.2 makes eBay OAuth client credentials the preferred token source when `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET` are present, while keeping `EBAY_APPLICATION_TOKEN` as a fallback. Release v1.6.1 added end-to-end eBay debug output for keyword scans, database inserts, and dashboard exports.
 
 ## What It Does
 
@@ -32,13 +32,33 @@ NicheScanner AI provides a small research workflow for product niche exploration
 - Niche DNA Engine: rule-based product type, topic, subtopic, and detected keyword classification using `core/engine/` modules and `core/knowledge/knowledge_base.json`.
 - Competition Engine: simple competition labels calculated in `core/scoring.py` from review counts: Very High, High, Medium, or Low.
 - Opportunity Finder: identifies products with strong demand, healthy pricing, and good niche scores in `core/opportunity_finder.py`.
-- Rating and scoring logic: products support ratings, and scoring includes review score, price score, rating score, total score, competition, and opportunity.
+- Opportunity Score 2.0: scoring includes demand, competition, price, trend, data confidence, overall score, and opportunity labels.
 - CSV Export: exports product details, rating, scores, competition, opportunity, and Niche DNA fields to `reports/nichescanner_report.csv`.
 - HTML Dashboard: generates `reports/dashboard.html` with summary cards and a sortable product table.
 - SQLite storage: stores products locally in `data/nichescanner.db`, with safe migration support for `rating` and optional Etsy detail columns.
 - Keyword trends: counts repeated words in stored product titles.
 - Mock fallback: keeps keyword scanning usable when Etsy and eBay are not configured or both external requests fail.
 
+## Opportunity Score 2.0
+
+Opportunity Score 2.0 is a transparent multi-factor scoring model in `core/scoring.py`. It keeps the final score on a 0-100 scale, but breaks the result into components so users can understand why a product looks promising.
+
+Components:
+
+- Demand Score: estimates market demand from product review volume and rating when product-level data is available.
+- Competition Score: estimates competitive pressure from review volume. Lower pressure produces a higher competition score.
+- Price Score: measures whether the product price is in a healthy print-on-demand research range.
+- Trend Score: reserved for Google Trends signal input. When no live trend signal is available, it safely uses `0`.
+- Data Confidence: estimates trust in the available marketplace data. Etsy is High, eBay is Medium because product reviews are unavailable from the eBay Browse API, and mock/fallback data is Low.
+- Overall Score: combines the components with weighted averages: Demand 35%, Price 25%, Competition 20%, Trend 10%, and Data Confidence 10%.
+
+Score labels:
+
+- `★★★★★ Excellent`
+- `★★★★ Good`
+- `★★★ Average`
+- `★★ Weak`
+- `★ Poor`
 ## Installation On Windows
 
 1. Install Python 3.11 or newer from the official Python website.
@@ -123,7 +143,7 @@ EBAY_CLIENT_SECRET=your_ebay_client_secret_here
 EBAY_APPLICATION_TOKEN=your_ebay_application_token_here
 ```
 
-The app does not require eBay credentials to run. When these values are missing, the eBay connector reports `eBay API not configured.` and fails safely. When `EBAY_APPLICATION_TOKEN` is present, the connector uses it directly as a bearer token and skips the OAuth request. When it is missing, the connector keeps the existing OAuth flow using `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET`. When eBay search succeeds, NicheScanner AI imports product title, platform, price, currency, item ID, item URL, product image, seller, condition, category, shipping price, seller feedback score, and seller feedback percentage when those fields are available from eBay.
+The app does not require eBay credentials to run. When these values are missing, the eBay connector reports `eBay API not configured.` and fails safely. When `EBAY_APPLICATION_TOKEN` is present, the connector uses it directly as a bearer token and skips the OAuth request. When it is missing, the connector keeps the existing OAuth flow using `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET`. When eBay search succeeds, NicheScanner AI imports product title, platform, price, currency, item ID, item URL, product image, seller name, condition, category, and shipping price when those fields are available from eBay. eBay seller feedback is seller-level reputation, so it is not used as product review or rating data.
 
 Use menu option `12. Show connector status` to check whether eBay is configured. The check reports whether credentials are present, whether a usable token can be found or retrieved, and whether a small product search can run. Do not commit `.env` or any real API credentials.
 
@@ -339,6 +359,8 @@ Completed:
 - v1.4: Static HTML dashboard export
 - v1.5: Rich Etsy product data import, faster batch-based Etsy scans, shop-level rating/review display, and dashboard display
 - v1.6: eBay marketplace integration, application-token support, and aggregated Etsy + eBay keyword scan results
+- v1.6.1: End-to-end eBay debug output for connector calls, Browse API item counts, SQLite inserts, and dashboard product counts
+- v1.6.2: eBay OAuth client credentials now take priority over the older application token fallback
 
 Future direction:
 

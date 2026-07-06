@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from html import escape
 
 import pandas as pd
 import streamlit as st
@@ -17,7 +18,8 @@ from connectors.connector_manager import get_connector_status, get_trend_summary
 from product_utils import product_to_dict
 
 
-APP_VERSION = "v1.5"
+APP_VERSION = "v1.7"
+EBAY_REVIEW_NOTE = "Product review data is unavailable from the eBay Browse API."
 
 
 st.set_page_config(
@@ -140,6 +142,85 @@ def load_css():
                 font-size: 0.9rem;
             }
 
+            .product-preview {
+                margin-top: 0.85rem;
+                padding: 1rem;
+                border: 1px solid #bfdbfe;
+                border-radius: 8px;
+                background: #f8fbff;
+            }
+
+            .product-preview-grid {
+                display: grid;
+                grid-template-columns: minmax(180px, 320px) minmax(0, 1fr);
+                gap: 1rem;
+                align-items: center;
+            }
+
+            .product-preview-image-wrap {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 180px;
+                max-height: 320px;
+                overflow: hidden;
+                border: 1px solid #dbeafe;
+                border-radius: 8px;
+                background: #ffffff;
+            }
+
+            .product-preview-image {
+                display: block;
+                max-width: 100%;
+                max-height: 300px;
+                width: auto;
+                height: auto;
+                object-fit: contain;
+            }
+
+            .product-preview-empty {
+                color: #64748b;
+                font-size: 0.95rem;
+                font-weight: 700;
+            }
+
+            .product-preview-title {
+                margin: 0 0 0.75rem;
+                color: #0f172a;
+                font-size: 1.05rem;
+                line-height: 1.35;
+                font-weight: 800;
+            }
+
+            .product-preview-meta {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 0.75rem;
+            }
+
+            .product-preview-label {
+                color: #64748b;
+                font-size: 0.78rem;
+                font-weight: 800;
+                text-transform: uppercase;
+            }
+
+            .product-preview-value {
+                margin-top: 0.2rem;
+                color: #0f172a;
+                font-size: 1rem;
+                font-weight: 700;
+            }
+
+            @media (max-width: 760px) {
+                .product-preview-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .product-preview-meta {
+                    grid-template-columns: 1fr;
+                }
+            }
             div[data-testid="stSidebar"] {
                 background: #f8fafc;
             }
@@ -149,7 +230,7 @@ def load_css():
     )
 
 
-def build_product_rows(products):
+def build_product_rows(products, trend_score=0):
     rows = []
 
     for product in products:
@@ -159,7 +240,7 @@ def build_product_rows(products):
         price = product_data["price"]
         reviews = product_data["reviews"]
         rating = product_data["rating"]
-        score = calculate_score(price, reviews, rating)
+        score = calculate_score(price, reviews, rating, platform, trend_score)
 
         rows.append({
             "Image": product_data["image_url"],
@@ -167,18 +248,38 @@ def build_product_rows(products):
             "Platform": platform,
             "Price": price,
             "Currency": product_data["currency"],
-            "Rating": rating,
-            "Reviews": reviews,
+            "Rating": format_marketplace_metric(platform, rating),
+            "Reviews": format_marketplace_metric(platform, reviews),
             "Product Link": product_data["product_url"],
             "Shop": product_data["shop_name"],
             "Shop Link": product_data["shop_url"],
             "Listing ID": product_data["listing_id"],
-            "Score": score["total_score"],
+            "Score": score["overall_score"],
+            "Score Badge": score["score_badge"],
+            "Demand": score["demand_score"],
+            "Competition Score": score["competition_score"],
+            "Trend": score["trend_score"],
+            "Price Score": score["price_score"],
+            "Confidence": score["confidence"],
             "Competition": score["competition"],
             "Opportunity": score["opportunity"],
         })
-
     return rows
+
+
+def format_marketplace_metric(platform, value):
+    if str(platform).lower() == "ebay" and value == 0:
+        return "N/A"
+
+    return value
+
+
+def has_unavailable_ebay_product_data(rows):
+    return any(
+        str(row["Platform"]).lower() == "ebay"
+        and (row["Reviews"] == "N/A" or row["Rating"] == "N/A")
+        for row in rows
+    )
 
 
 def get_kpi_values(products, rows, opportunities):
@@ -203,17 +304,8 @@ def get_kpi_values(products, rows, opportunities):
     }
 
 
-def get_trends_keyword(rows):
-    if not rows:
-        return ""
-
-    best_row = max(rows, key=lambda row: row["Score"])
-    title_words = str(best_row["Title"]).split()
-
-    if len(title_words) >= 2:
-        return " ".join(title_words[:2])
-
-    return best_row["Title"]
+def get_trends_keyword():
+    return st.session_state.get("last_scan_keyword", "").strip()
 
 
 def render_header():
@@ -295,7 +387,7 @@ def render_google_trends_card(summary):
         st.info(summary["message"])
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Keyword", summary["keyword"] or "No keyword yet")
+    col1.metric("Keyword", summary["keyword"] or "No keyword selected")
     col2.metric("Trend Score", summary["trend_score"])
     col3.metric("Direction", summary["trend_direction"])
 
@@ -316,11 +408,15 @@ def render_scan_form():
         if not keyword.strip():
             st.warning("Please enter a keyword.")
         else:
+            cleaned_keyword = keyword.strip()
+            st.session_state["last_scan_keyword"] = cleaned_keyword
+
             with st.spinner("Scanning products..."):
                 print("SCAN EXECUTED")
-                products = scan_keyword(keyword.strip())
+                products = scan_keyword(cleaned_keyword)
                 print("SCAN FINISHED")
                 imported_count = 0
+                inserted_ebay_count = 0
 
                 for product in products:
                     was_inserted = add_product(
@@ -339,25 +435,67 @@ def render_scan_form():
 
                     if was_inserted:
                         imported_count += 1
+                        if str(product.get("platform", "")).lower() == "ebay":
+                            inserted_ebay_count += 1
+
+                print(f"[DB] inserted ebay products count: {inserted_ebay_count}")
 
             st.success(
-                f"Imported {imported_count} new products for '{keyword}'."
+                f"Imported {imported_count} new products for '{cleaned_keyword}'."
             )
             st.rerun()
 
 
+def get_selected_product_row(df):
+    table_state = st.session_state.get("product_research_table")
+    selected_rows = []
+
+    if table_state is not None:
+        if hasattr(table_state, "selection"):
+            selected_rows = table_state.selection.rows
+        elif isinstance(table_state, dict):
+            selection = table_state.get("selection", {})
+            selected_rows = selection.get("rows", [])
+
+    if selected_rows:
+        selected_index = int(selected_rows[0])
+        st.session_state["selected_product_row_index"] = selected_index
+    else:
+        selected_index = st.session_state.get("selected_product_row_index")
+
+    if selected_index is None or selected_index not in df.index:
+        st.session_state.pop("selected_product_row_index", None)
+        return None, None
+
+    return selected_index, df.loc[selected_index]
+
+
 def render_product_table(df):
-    styled_df = df.style.map(
-        competition_badge,
-        subset=["Competition"]
+    selected_index, selected_product = get_selected_product_row(df)
+
+    def highlight_selected_row(row):
+        if row.name == selected_index:
+            return ["background-color: #e0f2fe"] * len(row)
+
+        return [""] * len(row)
+
+    styled_df = (
+        df.style
+        .map(competition_badge, subset=["Competition"])
+        .apply(highlight_selected_row, axis=1)
     )
 
-    st.dataframe(
+    visible_columns = [column for column in df.columns if column != "Image"]
+
+    table_state = st.dataframe(
         styled_df,
         width="stretch",
         hide_index=True,
+        column_order=visible_columns,
+        key="product_research_table",
+        on_select="rerun",
+        selection_mode="single-row",
         column_config={
-            "Image": st.column_config.ImageColumn("Image", width="small"),
             "Price": st.column_config.NumberColumn("Price", format="%.2f"),
             "Product Link": st.column_config.LinkColumn(
                 "Product",
@@ -367,17 +505,83 @@ def render_product_table(df):
                 "Shop URL",
                 display_text="Open"
             ),
-            "Rating": st.column_config.NumberColumn("⭐ Shop Rating", format="%.1f"),
-            "Reviews": st.column_config.NumberColumn("Shop Reviews"),
             "Score": st.column_config.ProgressColumn(
-                "Score",
+                "Overall Score",
                 min_value=0,
                 max_value=100,
                 format="%d"
             ),
+            "Demand": st.column_config.ProgressColumn("Demand", min_value=0, max_value=100, format="%d"),
+            "Competition Score": st.column_config.ProgressColumn("Competition", min_value=0, max_value=100, format="%d"),
+            "Trend": st.column_config.ProgressColumn("Trend", min_value=0, max_value=100, format="%d"),
+            "Price Score": st.column_config.ProgressColumn("Price", min_value=0, max_value=100, format="%d"),
         }
     )
 
+    if table_state.selection.rows:
+        selected_index = int(table_state.selection.rows[0])
+        st.session_state["selected_product_row_index"] = selected_index
+        return df.loc[selected_index]
+
+    return selected_product
+
+
+def render_product_preview(product):
+    if product is None:
+        st.caption("Select a product row to preview details.")
+        return
+
+    image_url = str(product.get("Image", "") or "").strip()
+    title = escape(str(product.get("Title", "Untitled product")))
+    platform = escape(str(product.get("Platform", "Unavailable")))
+    price = format_price(float(product.get("Price", 0)), str(product.get("Currency", "")))
+    score = escape(str(product.get("Score", 0)))
+    reviews = escape(str(product.get("Reviews", "N/A")))
+    rating = escape(str(product.get("Rating", "N/A")))
+
+    if image_url:
+        image_markup = (
+            f'<img class="product-preview-image" src="{escape(image_url, quote=True)}" '
+            f'alt="{title}">'
+        )
+    else:
+        image_markup = '<div class="product-preview-empty">No image available.</div>'
+
+    st.markdown(
+        f"""
+        <div class="product-preview">
+            <div class="product-preview-grid">
+                <div class="product-preview-image-wrap">{image_markup}</div>
+                <div>
+                    <div class="product-preview-title">{title}</div>
+                    <div class="product-preview-meta">
+                        <div>
+                            <div class="product-preview-label">Platform</div>
+                            <div class="product-preview-value">{platform}</div>
+                        </div>
+                        <div>
+                            <div class="product-preview-label">Price</div>
+                            <div class="product-preview-value">{escape(price)}</div>
+                        </div>
+                        <div>
+                            <div class="product-preview-label">Opportunity Score</div>
+                            <div class="product-preview-value">{score}/100</div>
+                        </div>
+                        <div>
+                            <div class="product-preview-label">Shop Reviews</div>
+                            <div class="product-preview-value">{reviews}</div>
+                        </div>
+                        <div>
+                            <div class="product-preview-label">Shop Rating</div>
+                            <div class="product-preview-value">{rating}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 def render_charts(df):
     chart_col1, chart_col2 = st.columns([1.45, 1], gap="large")
@@ -485,8 +689,11 @@ def render_hidden_opportunities(opportunities):
             col1, col2, col3, col4 = st.columns(4)
             col1.metric("Platform", item["platform"])
             col2.metric("Price", format_price(item["price"], item.get("currency", "")))
-            col3.metric("Shop Reviews", item["reviews"])
-            col4.metric("⭐ Shop Rating", item["rating"])
+            col3.metric("Shop Reviews", format_marketplace_metric(item["platform"], item["reviews"]))
+            col4.metric("Shop Rating", format_marketplace_metric(item["platform"], item["rating"]))
+
+            if str(item["platform"]).lower() == "ebay":
+                st.caption(EBAY_REVIEW_NOTE)
 
             if item.get("product_url"):
                 st.link_button("Open product", item["product_url"])
@@ -496,6 +703,11 @@ def render_hidden_opportunities(opportunities):
                 st.link_button(shop_label, item["shop_url"])
 
             st.write(f"**Competition:** {item['score']['competition']}")
+            st.write(f"**Demand:** {item['score']['demand_score']}/100")
+            st.write(f"**Competition Score:** {item['score']['competition_score']}/100")
+            st.write(f"**Trend:** {item['score']['trend_score']}/100")
+            st.write(f"**Price:** {item['score']['price_score']}/100")
+            st.write(f"**Confidence:** {item['score']['confidence']}")
             st.write("**Reasons:**")
 
             for reason in item["reasons"]:
@@ -515,11 +727,11 @@ create_database()
 load_css()
 
 products = get_products()
-rows = build_product_rows(products)
+trends_keyword = get_trends_keyword()
+trend_summary = get_trend_summary(trends_keyword)
+rows = build_product_rows(products, trend_summary["trend_score"])
 opportunities = find_hidden_opportunities(products)
 kpis = get_kpi_values(products, rows, opportunities)
-trends_keyword = get_trends_keyword(rows)
-trend_summary = get_trend_summary(trends_keyword)
 connector_status = get_connector_status()
 
 render_header()
@@ -562,7 +774,10 @@ if rows:
     render_charts(df)
 
     st.markdown('<div class="section-title">Product Research Table</div>', unsafe_allow_html=True)
-    render_product_table(df)
+    if has_unavailable_ebay_product_data(rows):
+        st.caption(EBAY_REVIEW_NOTE)
+    selected_product = render_product_table(df)
+    render_product_preview(selected_product)
     render_hidden_opportunities(opportunities)
 else:
     render_google_trends_card(trend_summary)

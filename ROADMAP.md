@@ -80,6 +80,23 @@ Focus: improve the optional Etsy integration while keeping mock fallback and old
 - Displayed clickable product links and thumbnails in the Streamlit dashboard.
 - Kept CLI, CSV import, mock fallback, and older product rows compatible.
 
+### v1.6.2 - eBay OAuth Credential Priority - Completed
+
+Focus: use fresh production OAuth application tokens from eBay client credentials when they are available.
+
+- Preferred `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET` over the older `EBAY_APPLICATION_TOKEN` value.
+- Kept `EBAY_APPLICATION_TOKEN` only as a fallback when OAuth credentials are missing.
+- Verified production OAuth and Browse API calls end-to-end through CLI, SQLite, and dashboard export.
+
+### v1.6.1 - eBay End-to-End Debug Verification - Completed
+
+Focus: make it easy to prove that eBay Browse API results flow through the CLI, SQLite database, and dashboard output.
+
+- Added eBay connector debug output for connector calls, search URL, status code, raw item count, and mapped product count.
+- Added SQLite insert debug output for newly inserted eBay products after keyword scans.
+- Added dashboard export debug output for stored eBay product count.
+- Kept the existing database schema and marketplace behavior compatible.
+
 ### v1.6 - eBay Marketplace Integration - Completed
 
 Focus: add eBay as the next marketplace while keeping the connector system clean and reusable.

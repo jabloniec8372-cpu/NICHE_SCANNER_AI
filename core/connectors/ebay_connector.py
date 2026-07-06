@@ -1,6 +1,7 @@
 import base64
 import os
 from pathlib import Path
+from urllib.parse import quote
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -38,6 +39,15 @@ def get_ebay_application_token():
     return _read_value_from_env_file("EBAY_APPLICATION_TOKEN")
 
 
+def get_ebay_env():
+    ebay_env = os.environ.get("EBAY_ENV", "").strip()
+
+    if ebay_env:
+        return ebay_env
+
+    return _read_value_from_env_file("EBAY_ENV")
+
+
 def is_ebay_configured():
     return bool(get_ebay_application_token() or (get_ebay_client_id() and get_ebay_client_secret()))
 
@@ -70,16 +80,21 @@ def check_ebay_connection(keyword="cat mug"):
     return result
 
 def get_ebay_access_token():
-    application_token = get_ebay_application_token()
-
-    if application_token:
-        print("[INFO] eBay application token detected; OAuth request skipped.")
-        return application_token
-
     client_id = get_ebay_client_id()
     client_secret = get_ebay_client_secret()
+    application_token = get_ebay_application_token()
+
+    print(f"[EBAY] .env loaded: {(PROJECT_ROOT / '.env').exists()}")
+    print(f"[EBAY] EBAY_CLIENT_ID exists: {bool(client_id)}")
+    print(f"[EBAY] EBAY_CLIENT_SECRET exists: {bool(client_secret)}")
+    print(f"[EBAY] OAuth token URL: {EBAY_TOKEN_URL}")
+    print(f"[EBAY] EBAY_ENV: {get_ebay_env() or 'production'}")
 
     if not client_id or not client_secret:
+        if application_token:
+            print("[INFO] eBay OAuth credentials missing; falling back to EBAY_APPLICATION_TOKEN.")
+            return application_token
+
         print("eBay API not configured.")
         return ""
 
@@ -105,6 +120,7 @@ def get_ebay_access_token():
             },
             timeout=10,
         )
+        print(f"[EBAY] OAuth status code: {response.status_code}")
         print(f"[INFO] eBay OAuth status code: {response.status_code}")
 
         if not response.ok:
@@ -131,6 +147,7 @@ def get_ebay_access_token():
 
 
 def search_ebay_products(keyword, limit=DEFAULT_LIMIT):
+    print("[EBAY] connector called")
     print(f"[INFO] eBay search starts for keyword: {keyword}")
 
     clean_keyword = str(keyword).strip()
@@ -151,6 +168,7 @@ def search_ebay_products(keyword, limit=DEFAULT_LIMIT):
         return []
 
     wanted_products = _safe_positive_int(limit, DEFAULT_LIMIT)
+    print(f"[EBAY] search URL: {EBAY_BROWSE_SEARCH_URL}?q={quote(clean_keyword)}&limit={wanted_products}")
 
     try:
         response = requests.get(
@@ -165,6 +183,7 @@ def search_ebay_products(keyword, limit=DEFAULT_LIMIT):
             },
             timeout=10,
         )
+        print(f"[EBAY] status code: {response.status_code}")
         print(f"[INFO] eBay Browse search status code: {response.status_code}")
 
         if not response.ok:
@@ -185,9 +204,12 @@ def search_ebay_products(keyword, limit=DEFAULT_LIMIT):
     item_summaries = data.get("itemSummaries", [])
 
     if not isinstance(item_summaries, list):
+        print("[EBAY] raw items count: 0")
+        print("[EBAY] mapped products count: 0")
         print("[INFO] eBay Browse search returned no item summaries.")
         return []
 
+    print(f"[EBAY] raw items count: {len(item_summaries)}")
     products = []
 
     for item in item_summaries:
@@ -196,6 +218,7 @@ def search_ebay_products(keyword, limit=DEFAULT_LIMIT):
         if product:
             products.append(product)
 
+    print(f"[EBAY] mapped products count: {len(products)}")
     return products
 
 
@@ -216,6 +239,7 @@ def _normalize_item(item):
     category = _extract_category(item)
     shipping_price = _extract_shipping_price(item)
 
+    # eBay seller feedback is seller-level reputation, not product review/rating data.
     return {
         "title": title,
         "platform": "eBay",
@@ -229,8 +253,8 @@ def _normalize_item(item):
         "condition": condition,
         "category": category,
         "shipping_price": shipping_price,
-        "reviews": _extract_seller_feedback_score(item),
-        "rating": _extract_seller_feedback_percentage(item),
+        "reviews": 0,
+        "rating": 0,
         "listing_id": item_id,
         "product_url": item_url,
         "shop_name": seller_name,

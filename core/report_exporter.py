@@ -1,4 +1,4 @@
-﻿import csv
+import csv
 from pathlib import Path
 
 from engine.niche_dna_engine import build_niche_dna
@@ -8,6 +8,13 @@ from scoring import calculate_score
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 REPORT_PATH = PROJECT_ROOT / "reports" / "nichescanner_report.csv"
+
+
+def format_marketplace_metric(platform, value):
+    if str(platform).lower() == "ebay" and value == 0:
+        return "N/A"
+
+    return value
 
 
 def export_products_to_csv(products):
@@ -27,10 +34,14 @@ def export_products_to_csv(products):
             "Image URL",
             "Shop Name",
             "Shop URL",
+            "Overall Score",
+            "Score Badge",
+            "Demand Score",
+            "Competition Score",
             "Trend Score",
-            "Review Score",
             "Price Score",
-            "Rating Score",
+            "Data Confidence",
+            "Confidence Score",
             "Competition",
             "Opportunity",
             "Product Type",
@@ -48,8 +59,7 @@ def export_products_to_csv(products):
             reviews = product_data["reviews"]
             rating = product_data["rating"]
 
-            score = calculate_score(price, reviews, rating)
-
+            score = calculate_score(price, reviews, rating, platform)
             dna = build_niche_dna(title)
 
             writer.writerow([
@@ -57,17 +67,21 @@ def export_products_to_csv(products):
                 platform,
                 price,
                 product_data["currency"],
-                rating,
-                reviews,
+                format_marketplace_metric(platform, rating),
+                format_marketplace_metric(platform, reviews),
                 product_data["listing_id"],
                 product_data["product_url"],
                 product_data["image_url"],
                 product_data["shop_name"],
                 product_data["shop_url"],
-                score["total_score"],
-                score["review_score"],
+                score["overall_score"],
+                score["score_badge"],
+                score["demand_score"],
+                score["competition_score"],
+                score["trend_score"],
                 score["price_score"],
-                score["rating_score"],
+                score["confidence"],
+                score["confidence_score"],
                 score["competition"],
                 score["opportunity"],
                 dna["product_type"],
