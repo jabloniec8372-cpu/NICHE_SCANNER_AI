@@ -18,8 +18,40 @@ from connectors.connector_manager import get_connector_status, get_trend_summary
 from product_utils import product_to_dict
 
 
-APP_VERSION = "v1.7"
-EBAY_REVIEW_NOTE = "Product review data is unavailable from the eBay Browse API."
+APP_VERSION = "v1.7.1"
+PRODUCT_TYPES = [
+    "T-Shirts",
+    "Mugs",
+    "Stickers",
+    "Wall Art",
+    "Hoodies",
+    "Towels",
+    "Posters",
+    "Tote Bags",
+    "Other",
+]
+
+PRODUCT_TYPE_KEYWORDS = {
+    "T-Shirts": ["t-shirt", "tshirt", "shirt", "tee"],
+    "Hoodies": ["hoodie", "sweatshirt"],
+    "Mugs": ["mug", "cup"],
+    "Stickers": ["sticker", "stickers", "decal", "vinyl decal"],
+    "Posters": ["poster", "print"],
+    "Wall Art": ["wall art", "canvas"],
+    "Towels": ["towel", "towels"],
+    "Tote Bags": ["tote", "tote bag", "bag"],
+}
+
+PRODUCT_TYPE_QUERY_TERMS = {
+    "T-Shirts": "shirt",
+    "Hoodies": "hoodie",
+    "Mugs": "mug",
+    "Stickers": "sticker",
+    "Posters": "poster",
+    "Wall Art": "wall art",
+    "Towels": "towel",
+    "Tote Bags": "tote bag",
+}
 
 
 st.set_page_config(
@@ -137,93 +169,57 @@ def load_css():
                 padding: 0.65rem 0;
             }
 
-            .small-muted {
-                color: #64748b;
-                font-size: 0.9rem;
-            }
-
-            .product-preview {
-                margin-top: 0.85rem;
-                padding: 1rem;
-                border: 1px solid #bfdbfe;
-                border-radius: 8px;
-                background: #f8fbff;
-            }
-
-            .product-preview-grid {
-                display: grid;
-                grid-template-columns: minmax(180px, 320px) minmax(0, 1fr);
-                gap: 1rem;
-                align-items: center;
-            }
-
-            .product-preview-image-wrap {
+            .connector-status-row {
                 display: flex;
-                align-items: center;
-                justify-content: center;
-                min-height: 180px;
-                max-height: 320px;
-                overflow: hidden;
-                border: 1px solid #dbeafe;
-                border-radius: 8px;
-                background: #ffffff;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                margin: 0 0 0.85rem;
             }
 
-            .product-preview-image {
-                display: block;
-                max-width: 100%;
-                max-height: 300px;
-                width: auto;
-                height: auto;
-                object-fit: contain;
-            }
-
-            .product-preview-empty {
-                color: #64748b;
-                font-size: 0.95rem;
+            .connector-status-badge {
+                display: inline-block;
+                padding: 0.32rem 0.65rem;
+                border: 1px solid #bbf7d0;
+                border-radius: 999px;
+                background: #f0fdf4;
+                color: #166534;
+                font-size: 0.85rem;
                 font-weight: 700;
+                white-space: nowrap;
             }
 
-            .product-preview-title {
-                margin: 0 0 0.75rem;
-                color: #0f172a;
-                font-size: 1.05rem;
-                line-height: 1.35;
-                font-weight: 800;
-            }
-
-            .product-preview-meta {
-                display: grid;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 0.75rem;
-            }
-
-            .product-preview-label {
-                color: #64748b;
-                font-size: 0.78rem;
-                font-weight: 800;
-                text-transform: uppercase;
-            }
-
-            .product-preview-value {
-                margin-top: 0.2rem;
-                color: #0f172a;
-                font-size: 1rem;
-                font-weight: 700;
-            }
-
-            @media (max-width: 760px) {
-                .product-preview-grid {
-                    grid-template-columns: 1fr;
-                }
-
-                .product-preview-meta {
-                    grid-template-columns: 1fr;
-                }
-            }
-            div[data-testid="stSidebar"] {
+            .connector-status-badge-muted {
+                border-color: #e5e7eb;
                 background: #f8fafc;
+                color: #64748b;
             }
+
+            div[data-testid="stForm"][aria-label="search_form"] div[data-testid="stFormSubmitButton"]:nth-of-type(1) button {
+                border-color: #1d4ed8;
+                background: #1d4ed8;
+                color: #ffffff;
+                font-weight: 800;
+            }
+
+            div[data-testid="stForm"][aria-label="search_form"] div[data-testid="stFormSubmitButton"]:nth-of-type(1) button:hover {
+                border-color: #1e40af;
+                background: #1e40af;
+                color: #ffffff;
+            }
+
+            div[data-testid="stForm"][aria-label="search_form"] div[data-testid="stFormSubmitButton"]:nth-of-type(2) button {
+                border-color: #cbd5e1;
+                background: #ffffff;
+                color: #475569;
+                font-weight: 700;
+            }
+
+            div[data-testid="stForm"][aria-label="search_form"] div[data-testid="stFormSubmitButton"]:nth-of-type(2) button:hover {
+                border-color: #94a3b8;
+                background: #f8fafc;
+                color: #334155;
+            }
+
         </style>
         """,
         unsafe_allow_html=True
@@ -236,6 +232,7 @@ def build_product_rows(products, trend_score=0):
     for product in products:
         product_data = product_to_dict(product)
         title = product_data["title"]
+        product_type = product_data.get("product_type") or normalize_product_type(title)
         platform = product_data["platform"]
         price = product_data["price"]
         reviews = product_data["reviews"]
@@ -254,6 +251,7 @@ def build_product_rows(products, trend_score=0):
             "Shop": product_data["shop_name"],
             "Shop Link": product_data["shop_url"],
             "Listing ID": product_data["listing_id"],
+            "Product Type": product_type,
             "Score": score["overall_score"],
             "Score Badge": score["score_badge"],
             "Demand": score["demand_score"],
@@ -272,14 +270,6 @@ def format_marketplace_metric(platform, value):
         return "N/A"
 
     return value
-
-
-def has_unavailable_ebay_product_data(rows):
-    return any(
-        str(row["Platform"]).lower() == "ebay"
-        and (row["Reviews"] == "N/A" or row["Rating"] == "N/A")
-        for row in rows
-    )
 
 
 def get_kpi_values(products, rows, opportunities):
@@ -356,67 +346,214 @@ def format_connector_label(connector_name):
 
     return connector_name.replace("_", " ").title()
 
-def render_sidebar(products, rows, opportunities, connector_status):
-    st.sidebar.markdown("## NicheScanner AI")
-    st.sidebar.caption(f"Project version: {APP_VERSION}")
 
-    st.sidebar.markdown("### Database statistics")
-    st.sidebar.metric("Stored products", len(products))
-    st.sidebar.metric("Platforms", len({row["Platform"] for row in rows}))
-    st.sidebar.metric("Hidden opportunities", len(opportunities))
+def get_selected_product_types():
+    return [
+        product_type
+        for product_type in PRODUCT_TYPES
+        if st.session_state.get(f"product_type_{product_type}", True)
+    ]
 
-    st.sidebar.markdown("### Connectors")
-    for connector_name, connector in connector_status.items():
+
+def normalize_product_type(title):
+    normalized_title = str(title).lower()
+    for product_type in PRODUCT_TYPES:
+        if product_type == "Other":
+            continue
+
+        if title_matches_product_type(normalized_title, product_type):
+            return product_type
+
+    return "Other"
+
+
+def title_matches_product_type(title, product_type):
+    normalized_title = str(title).lower()
+    keywords = PRODUCT_TYPE_KEYWORDS.get(product_type, [])
+    return any(keyword in normalized_title for keyword in keywords)
+
+
+def build_scan_queries(keyword, selected_product_types):
+    base_keyword = str(keyword).strip()
+
+    if not selected_product_types:
+        return [base_keyword]
+
+    queries = []
+    for product_type in selected_product_types:
+        query_term = PRODUCT_TYPE_QUERY_TERMS.get(product_type)
+        if query_term:
+            queries.append(f"{base_keyword} {query_term}")
+
+    return queries or [base_keyword]
+
+
+def product_key(product):
+    return (
+        str(product.get("platform", "")).strip().lower(),
+        str(product.get("title", "")).strip().lower(),
+        str(product.get("product_url", "")).strip().lower(),
+    )
+
+
+def normalize_and_filter_products(products, selected_product_types):
+    selected_types = set(selected_product_types)
+    filtered_products = []
+    seen_keys = set()
+
+    for product in products:
+        clean_product = product_to_dict(product)
+        clean_product["product_type"] = normalize_product_type(clean_product["title"])
+
+        if selected_types and clean_product["product_type"] not in selected_types:
+            continue
+
+        key = product_key(clean_product)
+        if key in seen_keys:
+            continue
+
+        seen_keys.add(key)
+        filtered_products.append(clean_product)
+
+    return filtered_products
+
+
+def build_scan_summary(products, selected_product_types):
+    platform_counts = {}
+    product_type_counts = {
+        product_type: 0
+        for product_type in (selected_product_types or PRODUCT_TYPES)
+    }
+
+    for product in products:
+        platform = str(product.get("platform", "Unknown"))
+        platform_counts[platform] = platform_counts.get(platform, 0) + 1
+
+        product_type = product.get("product_type") or normalize_product_type(product.get("title", ""))
+        product_type_counts[product_type] = product_type_counts.get(product_type, 0) + 1
+
+    return {
+        "platform_counts": platform_counts,
+        "product_type_counts": product_type_counts,
+    }
+
+
+def render_count_summary(title, counts):
+    if not counts:
+        return
+
+    st.markdown(f'<div class="section-title">{title}</div>', unsafe_allow_html=True)
+    columns = st.columns(max(1, min(len(counts), 4)))
+
+    for index, (label, value) in enumerate(counts.items()):
+        columns[index % len(columns)].metric(label, value)
+
+
+def render_connector_status(connector_status):
+    visible_connectors = ["etsy", "ebay"]
+    status_items = []
+
+    for connector_name in visible_connectors:
+        connector = connector_status.get(connector_name, {"status": "Not configured"})
         label = format_connector_label(connector_name)
-        st.sidebar.caption(f"{label}: {connector['status']}")
+        status = str(connector["status"]).lower()
+        is_connected = "configured" in status
+        compact_status = "Connected" if is_connected else "Not connected"
+        badge_class = "connector-status-badge" if is_connected else "connector-status-badge connector-status-badge-muted"
+        status_items.append(
+            f'<span class="{badge_class}">{label} {compact_status}</span>'
+        )
 
-    st.sidebar.markdown("### Quick actions")
-    if st.sidebar.button("Clear database", width="stretch"):
+    st.markdown(
+        f"""
+        <div class="connector-status-row">{"".join(status_items)}</div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+def render_scan_controls():
+    st.markdown('<div class="section-title">Scan Platforms</div>', unsafe_allow_html=True)
+
+    with st.form("search_form", enter_to_submit=True):
+        platform_col1, platform_col2 = st.columns(2)
+        with platform_col1:
+            scan_ebay = st.checkbox("eBay", value=True)
+        with platform_col2:
+            scan_etsy = st.checkbox("Etsy", value=True)
+
+        keyword_col, keyword_spacer = st.columns([0.58, 0.42])
+        with keyword_col:
+            keyword = st.text_input(
+                "Keyword",
+                placeholder="Enter keyword, e.g. beard, cat, fishing"
+            )
+
+        st.markdown("Product types")
+        type_columns = st.columns(4)
+        for index, product_type in enumerate(PRODUCT_TYPES):
+            with type_columns[index % 4]:
+                st.checkbox(
+                    product_type,
+                    value=True,
+                    key=f"product_type_{product_type}"
+                )
+
+        action_col1, action_col2, action_spacer = st.columns([0.16, 0.22, 0.62])
+        with action_col1:
+            scan_requested = st.form_submit_button(
+                "Scan",
+                type="primary"
+            )
+        with action_col2:
+            clear_requested = st.form_submit_button(
+                "Clear database",
+                type="secondary"
+            )
+
+    if clear_requested:
         clear_products()
+        st.session_state.pop("last_scan_summary", None)
+        st.session_state.pop("last_scan_product_titles", None)
+        st.session_state.pop("selected_product_row_index", None)
+        st.session_state.pop("selected_product_row_indices", None)
         st.rerun()
 
-    st.sidebar.caption("Use the scan form to import mock marketplace results.")
-
-
-def render_google_trends_card(summary):
-    st.markdown('<div class="section-title">Google Trends Insight</div>', unsafe_allow_html=True)
-
-    if summary["available"]:
-        st.success(summary["message"])
-    else:
-        st.info(summary["message"])
-
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Keyword", summary["keyword"] or "No keyword selected")
-    col2.metric("Trend Score", summary["trend_score"])
-    col3.metric("Direction", summary["trend_direction"])
-
-
-def render_scan_form():
-    with st.form("search_form", enter_to_submit=True):
-        keyword = st.text_input(
-            "Scan keyword",
-            placeholder="example: nurse, camping, cat"
-        )
-
-        submitted = st.form_submit_button(
-            "Scan keyword",
-            width="stretch"
-        )
-
-    if submitted:
+    if scan_requested:
         if not keyword.strip():
             st.warning("Please enter a keyword.")
+        elif not scan_ebay and not scan_etsy:
+            st.warning("Select at least one platform.")
         else:
             cleaned_keyword = keyword.strip()
             st.session_state["last_scan_keyword"] = cleaned_keyword
+            selected_platforms = []
+            if scan_ebay:
+                selected_platforms.append("ebay")
+            if scan_etsy:
+                selected_platforms.append("etsy")
+
+            selected_product_types = get_selected_product_types()
+            scan_queries = build_scan_queries(cleaned_keyword, selected_product_types)
 
             with st.spinner("Scanning products..."):
-                print("SCAN EXECUTED")
-                products = scan_keyword(cleaned_keyword)
-                print("SCAN FINISHED")
+                scanned_products = []
+                for scan_query in scan_queries:
+                    scanned_products.extend(
+                        scan_keyword(scan_query, selected_platforms=selected_platforms)
+                    )
+
+                selected_platform_set = set(selected_platforms)
+                platform_products = [
+                    product_to_dict(product)
+                    for product in scanned_products
+                    if str(product.get("platform", "")).lower() in selected_platform_set
+                ]
+                products = normalize_and_filter_products(
+                    platform_products,
+                    selected_product_types
+                )
                 imported_count = 0
-                inserted_ebay_count = 0
 
                 for product in products:
                     was_inserted = add_product(
@@ -435,10 +572,14 @@ def render_scan_form():
 
                     if was_inserted:
                         imported_count += 1
-                        if str(product.get("platform", "")).lower() == "ebay":
-                            inserted_ebay_count += 1
 
-                print(f"[DB] inserted ebay products count: {inserted_ebay_count}")
+            st.session_state["last_scan_summary"] = build_scan_summary(
+                products,
+                selected_product_types
+            )
+            st.session_state["last_scan_product_titles"] = [
+                product["title"] for product in products
+            ]
 
             st.success(
                 f"Imported {imported_count} new products for '{cleaned_keyword}'."
@@ -446,46 +587,88 @@ def render_scan_form():
             st.rerun()
 
 
-def get_selected_product_row(df):
-    table_state = st.session_state.get("product_research_table")
+def render_scan_summary():
+    summary = st.session_state.get("last_scan_summary")
+    if not summary:
+        return
+
+    render_count_summary("Scan Results By Platform", summary["platform_counts"])
+    render_count_summary("Scan Results By Product Type", summary["product_type_counts"])
+
+
+TABLE_SELECTION_MODE = "single-row"
+
+
+def truncate_text(value, max_length=34):
+    text = str(value)
+    if len(text) <= max_length:
+        return text
+
+    return f"{text[:max_length - 3]}..."
+
+
+def get_table_selected_indices(table_state, df):
     selected_rows = []
 
     if table_state is not None:
         if hasattr(table_state, "selection"):
             selected_rows = table_state.selection.rows
         elif isinstance(table_state, dict):
-            selection = table_state.get("selection", {})
-            selected_rows = selection.get("rows", [])
+            selected_rows = table_state.get("selection", {}).get("rows", [])
 
     if selected_rows:
-        selected_index = int(selected_rows[0])
+        selected_indices = [int(row) for row in selected_rows if int(row) in df.index]
+        st.session_state["selected_product_row_indices"] = selected_indices
+    else:
+        selected_indices = st.session_state.get("selected_product_row_indices", [])
+
+    selected_indices = [index for index in selected_indices if index in df.index]
+
+    if not selected_indices:
+        st.session_state.pop("selected_product_row_indices", None)
+        return []
+
+    return selected_indices
+
+
+def get_primary_selected_index(table_state, df):
+    selected_indices = get_table_selected_indices(table_state, df)
+
+    if selected_indices:
+        selected_index = selected_indices[0]
         st.session_state["selected_product_row_index"] = selected_index
     else:
         selected_index = st.session_state.get("selected_product_row_index")
 
     if selected_index is None or selected_index not in df.index:
         st.session_state.pop("selected_product_row_index", None)
-        return None, None
+        return None
 
-    return selected_index, df.loc[selected_index]
+    return selected_index
 
 
 def render_product_table(df):
-    selected_index, selected_product = get_selected_product_row(df)
+    selected_index = st.session_state.get("selected_product_row_index")
+    display_df = df.copy()
+    display_df["Full Title"] = display_df["Title"]
+    display_df["Title"] = display_df["Title"].map(truncate_text)
 
     def highlight_selected_row(row):
         if row.name == selected_index:
-            return ["background-color: #e0f2fe"] * len(row)
+            return ["background-color: #dbeafe; font-weight: 700;"] * len(row)
 
         return [""] * len(row)
 
     styled_df = (
-        df.style
+        display_df.style
         .map(competition_badge, subset=["Competition"])
         .apply(highlight_selected_row, axis=1)
     )
 
-    visible_columns = [column for column in df.columns if column != "Image"]
+    hidden_columns = {"Image", "Trend", "Platform", "Full Title"}
+    visible_columns = [
+        column for column in display_df.columns if column not in hidden_columns
+    ]
 
     table_state = st.dataframe(
         styled_df,
@@ -494,16 +677,20 @@ def render_product_table(df):
         column_order=visible_columns,
         key="product_research_table",
         on_select="rerun",
-        selection_mode="single-row",
+        selection_mode=TABLE_SELECTION_MODE,
         column_config={
+            "Title": st.column_config.TextColumn(
+                "Title",
+                help="Select a row to view the full product title below."
+            ),
             "Price": st.column_config.NumberColumn("Price", format="%.2f"),
             "Product Link": st.column_config.LinkColumn(
-                "Product",
-                display_text="Open"
+                "Source",
+                display_text="Open product"
             ),
             "Shop Link": st.column_config.LinkColumn(
-                "Shop URL",
-                display_text="Open"
+                "Shop Link",
+                display_text="Open shop"
             ),
             "Score": st.column_config.ProgressColumn(
                 "Overall Score",
@@ -513,160 +700,45 @@ def render_product_table(df):
             ),
             "Demand": st.column_config.ProgressColumn("Demand", min_value=0, max_value=100, format="%d"),
             "Competition Score": st.column_config.ProgressColumn("Competition", min_value=0, max_value=100, format="%d"),
-            "Trend": st.column_config.ProgressColumn("Trend", min_value=0, max_value=100, format="%d"),
-            "Price Score": st.column_config.ProgressColumn("Price", min_value=0, max_value=100, format="%d"),
+            "Price Score": st.column_config.ProgressColumn("Price Score", min_value=0, max_value=100, format="%d"),
         }
     )
 
-    if table_state.selection.rows:
-        selected_index = int(table_state.selection.rows[0])
-        st.session_state["selected_product_row_index"] = selected_index
-        return df.loc[selected_index]
+    selected_index = get_primary_selected_index(table_state, df)
+    if selected_index is None:
+        return None
 
-    return selected_product
+    return df.loc[selected_index]
 
 
 def render_product_preview(product):
     if product is None:
-        st.caption("Select a product row to preview details.")
         return
 
     image_url = str(product.get("Image", "") or "").strip()
-    title = escape(str(product.get("Title", "Untitled product")))
-    platform = escape(str(product.get("Platform", "Unavailable")))
-    price = format_price(float(product.get("Price", 0)), str(product.get("Currency", "")))
+    title = escape(str(product.get("Title", "")))
+    platform = escape(str(product.get("Platform", "")))
+    price = escape(format_price(float(product.get("Price", 0)), str(product.get("Currency", ""))))
     score = escape(str(product.get("Score", 0)))
-    reviews = escape(str(product.get("Reviews", "N/A")))
-    rating = escape(str(product.get("Rating", "N/A")))
+    shop = escape(str(product.get("Shop", "") or "Unavailable"))
 
-    if image_url:
-        image_markup = (
-            f'<img class="product-preview-image" src="{escape(image_url, quote=True)}" '
-            f'alt="{title}">'
-        )
-    else:
-        image_markup = '<div class="product-preview-empty">No image available.</div>'
+    st.markdown('<div class="section-title">Selected Product</div>', unsafe_allow_html=True)
 
-    st.markdown(
-        f"""
-        <div class="product-preview">
-            <div class="product-preview-grid">
-                <div class="product-preview-image-wrap">{image_markup}</div>
-                <div>
-                    <div class="product-preview-title">{title}</div>
-                    <div class="product-preview-meta">
-                        <div>
-                            <div class="product-preview-label">Platform</div>
-                            <div class="product-preview-value">{platform}</div>
-                        </div>
-                        <div>
-                            <div class="product-preview-label">Price</div>
-                            <div class="product-preview-value">{escape(price)}</div>
-                        </div>
-                        <div>
-                            <div class="product-preview-label">Opportunity Score</div>
-                            <div class="product-preview-value">{score}/100</div>
-                        </div>
-                        <div>
-                            <div class="product-preview-label">Shop Reviews</div>
-                            <div class="product-preview-value">{reviews}</div>
-                        </div>
-                        <div>
-                            <div class="product-preview-label">Shop Rating</div>
-                            <div class="product-preview-value">{rating}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    preview_col, detail_col = st.columns([1, 2.2], gap="large")
+    with preview_col:
+        if image_url:
+            st.image(image_url, use_container_width=True)
 
-def render_charts(df):
-    chart_col1, chart_col2 = st.columns([1.45, 1], gap="large")
-
-    with chart_col1:
-        st.markdown('<div class="section-title">Top 10 Products by Score</div>', unsafe_allow_html=True)
-        top_products = (
-            df.sort_values("Score", ascending=False)
-            .head(10)[["Title", "Score"]]
-            .reset_index(drop=True)
-        )
-
-        st.vega_lite_chart(
-            top_products,
-            {
-                "height": 320,
-                "autosize": {"type": "fit", "contains": "padding"},
-                "mark": {"type": "bar", "cornerRadiusEnd": 4, "tooltip": True},
-                "encoding": {
-                    "y": {
-                        "field": "Title",
-                        "type": "nominal",
-                        "sort": "-x",
-                        "axis": {
-                            "title": None,
-                            "labelLimit": 260,
-                            "labelFontSize": 12
-                        }
-                    },
-                    "x": {
-                        "field": "Score",
-                        "type": "quantitative",
-                        "scale": {"domain": [0, 100]},
-                        "axis": {"title": "Score", "grid": True}
-                    },
-                    "color": {
-                        "field": "Score",
-                        "type": "quantitative",
-                        "scale": {"scheme": "blues"},
-                        "legend": None
-                    },
-                    "tooltip": [
-                        {"field": "Title", "type": "nominal"},
-                        {"field": "Score", "type": "quantitative"}
-                    ]
-                },
-                "config": {
-                    "view": {"stroke": None},
-                    "axis": {"labelColor": "#334155", "titleColor": "#64748b"}
-                }
-            },
-            width="stretch"
-        )
-
-    with chart_col2:
-        st.markdown('<div class="section-title">Platform Distribution</div>', unsafe_allow_html=True)
-        platform_df = (
-            df["Platform"]
-            .value_counts()
-            .reset_index()
-        )
-        platform_df.columns = ["Platform", "Products"]
-
-        st.vega_lite_chart(
-            platform_df,
-            {
-                "height": 320,
-                "autosize": {"type": "fit", "contains": "padding"},
-                "mark": {"type": "arc", "innerRadius": 52, "tooltip": True},
-                "encoding": {
-                    "theta": {"field": "Products", "type": "quantitative"},
-                    "color": {
-                        "field": "Platform",
-                        "type": "nominal",
-                        "legend": {"orient": "bottom", "title": None}
-                    },
-                    "tooltip": [
-                        {"field": "Platform", "type": "nominal"},
-                        {"field": "Products", "type": "quantitative"}
-                    ]
-                },
-                "config": {"view": {"stroke": None}}
-            },
-            width="stretch"
-        )
+    with detail_col:
+        st.markdown(f"**{title}**")
+        st.write(f"Platform: {platform}")
+        st.write(f"Price: {price}")
+        st.write(f"Shop/Seller: {shop}")
+        st.write(f"Opportunity Score: {score}/100")
+        if product.get("Product Link"):
+            st.link_button("Open", product["Product Link"])
+        if product.get("Shop Link"):
+            st.link_button("Open shop", product["Shop Link"])
 
 
 def render_hidden_opportunities(opportunities):
@@ -692,9 +764,6 @@ def render_hidden_opportunities(opportunities):
             col3.metric("Shop Reviews", format_marketplace_metric(item["platform"], item["reviews"]))
             col4.metric("Shop Rating", format_marketplace_metric(item["platform"], item["rating"]))
 
-            if str(item["platform"]).lower() == "ebay":
-                st.caption(EBAY_REVIEW_NOTE)
-
             if item.get("product_url"):
                 st.link_button("Open product", item["product_url"])
 
@@ -705,7 +774,6 @@ def render_hidden_opportunities(opportunities):
             st.write(f"**Competition:** {item['score']['competition']}")
             st.write(f"**Demand:** {item['score']['demand_score']}/100")
             st.write(f"**Competition Score:** {item['score']['competition_score']}/100")
-            st.write(f"**Trend:** {item['score']['trend_score']}/100")
             st.write(f"**Price:** {item['score']['price_score']}/100")
             st.write(f"**Confidence:** {item['score']['confidence']}")
             st.write("**Reasons:**")
@@ -723,10 +791,28 @@ def format_price(price, currency=""):
     return f"${price:.2f}"
 
 
+def get_current_result_products(products):
+    last_scan_titles = st.session_state.get("last_scan_product_titles")
+
+    if not last_scan_titles:
+        return products
+
+    title_filter = {
+        str(title).strip().lower()
+        for title in last_scan_titles
+    }
+    return [
+        product
+        for product in products
+        if product_to_dict(product)["title"].strip().lower() in title_filter
+    ]
+
+
 create_database()
 load_css()
 
-products = get_products()
+stored_products = get_products()
+products = get_current_result_products(stored_products)
 trends_keyword = get_trends_keyword()
 trend_summary = get_trend_summary(trends_keyword)
 rows = build_product_rows(products, trend_summary["trend_score"])
@@ -735,24 +821,14 @@ kpis = get_kpi_values(products, rows, opportunities)
 connector_status = get_connector_status()
 
 render_header()
-render_sidebar(products, rows, opportunities, connector_status)
-
-scan_col, note_col = st.columns([1.2, 1])
-
-with scan_col:
-    render_scan_form()
-
-with note_col:
-    st.markdown("### Research workflow")
-    st.markdown(
-        '<div class="small-muted">Scan a keyword, review scoring signals, compare platform distribution, and inspect hidden opportunities.</div>',
-        unsafe_allow_html=True
-    )
+render_connector_status(connector_status)
+render_scan_controls()
+render_scan_summary()
 
 kpi_col1, kpi_col2, kpi_col3, kpi_col4 = st.columns(4)
 
 with kpi_col1:
-    render_kpi_card("kpi-products", "Products", kpis["products"], "Stored in SQLite")
+    render_kpi_card("kpi-products", "Products", kpis["products"], "Current catalog")
 
 with kpi_col2:
     render_kpi_card("kpi-best", "Best Score", kpis["best_score"], kpis["best_product"])
@@ -770,15 +846,9 @@ if rows:
         .reset_index(drop=True)
     )
 
-    render_google_trends_card(trend_summary)
-    render_charts(df)
-
     st.markdown('<div class="section-title">Product Research Table</div>', unsafe_allow_html=True)
-    if has_unavailable_ebay_product_data(rows):
-        st.caption(EBAY_REVIEW_NOTE)
     selected_product = render_product_table(df)
     render_product_preview(selected_product)
     render_hidden_opportunities(opportunities)
 else:
-    render_google_trends_card(trend_summary)
-    st.info("Scan a keyword to begin.")
+    st.info("No products yet.")

@@ -2,9 +2,9 @@
 
 NicheScanner AI is a beginner-friendly Python command-line application for researching print-on-demand niche ideas. It stores product examples, imports user CSV research files, scans marketplace keyword results, scores demand signals, estimates competition, detects simple Niche DNA categories, finds promising opportunities, exports research data to CSV, and generates a static HTML dashboard.
 
-Current version: v1.6.2
+Current version: v1.7.1
 
-Release v1.6.2 makes eBay OAuth client credentials the preferred token source when `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET` are present, while keeping `EBAY_APPLICATION_TOKEN` as a fallback. Release v1.6.1 added end-to-end eBay debug output for keyword scans, database inserts, and dashboard exports.
+Release v1.7.1 makes dashboard Product Types work as real scan filters. Selected product types expand the search query, filter the imported result set, and keep the results table, product count, and product type summary consistent.
 
 ## What It Does
 
@@ -361,6 +361,7 @@ Completed:
 - v1.6: eBay marketplace integration, application-token support, and aggregated Etsy + eBay keyword scan results
 - v1.6.1: End-to-end eBay debug output for connector calls, Browse API item counts, SQLite inserts, and dashboard product counts
 - v1.6.2: eBay OAuth client credentials now take priority over the older application token fallback
+- v1.7.1: Product Types now expand dashboard scan queries and filter current scan results
 
 Future direction:
 
@@ -446,3 +447,11 @@ Future direction:
 - Normalized eBay products with title, platform, price, currency, item URL, image URL, seller, condition, category, shipping price, seller feedback score, and seller feedback percentage.
 - Updated the Connector Manager to query Etsy and eBay, aggregate both result sets, and use mock fallback only when both connectors return no products.
 - Kept scoring, dashboard behavior, and database schema compatible with existing product rows.
+
+### v1.7.1
+
+- Made dashboard Product Types real scan filters.
+- Expanded selected product types into focused queries such as `dog sticker` and `dog towel`.
+- Scanned only selected marketplace platforms from the dashboard.
+- Normalized dashboard result product types into T-Shirts, Hoodies, Mugs, Stickers, Posters, Wall Art, Towels, Tote Bags, or Other.
+- Filtered the current dashboard result set by selected product type without changing the SQLite schema.

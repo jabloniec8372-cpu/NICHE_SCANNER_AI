@@ -6,17 +6,31 @@ from connectors.google_trends import (
 )
 
 
-def search_all_sources(keyword, product_limit=50):
+def search_all_sources(keyword, product_limit=50, selected_platforms=None):
     products = []
+    platform_filter = None
 
-    etsy_products = search_etsy_products(keyword, limit=product_limit)
+    if selected_platforms is not None:
+        platform_filter = {
+            str(platform).strip().lower()
+            for platform in selected_platforms
+            if str(platform).strip()
+        }
+
+    if platform_filter is None or "etsy" in platform_filter:
+        etsy_products = search_etsy_products(keyword, limit=product_limit)
+    else:
+        etsy_products = []
 
     if etsy_products:
         print(f"[DEBUG] Connector source used: Etsy")
         print(f"[DEBUG] Products returned: {len(etsy_products)}")
         products.extend(etsy_products)
 
-    ebay_products = search_ebay_products(keyword, limit=product_limit)
+    if platform_filter is None or "ebay" in platform_filter:
+        ebay_products = search_ebay_products(keyword, limit=product_limit)
+    else:
+        ebay_products = []
 
     if ebay_products:
         print(f"[DEBUG] Connector source used: eBay")
@@ -26,6 +40,10 @@ def search_all_sources(keyword, product_limit=50):
     if products:
         print(f"[DEBUG] Combined products returned: {len(products)}")
         return products
+
+    if platform_filter is not None:
+        print("[DEBUG] No selected marketplace returned products.")
+        return []
 
     mock_products = _get_mock_products(keyword)
     print(f"[DEBUG] Connector source used: Mock")

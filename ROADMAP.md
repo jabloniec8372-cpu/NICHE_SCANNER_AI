@@ -88,6 +88,16 @@ Focus: use fresh production OAuth application tokens from eBay client credential
 - Kept `EBAY_APPLICATION_TOKEN` only as a fallback when OAuth credentials are missing.
 - Verified production OAuth and Browse API calls end-to-end through CLI, SQLite, and dashboard export.
 
+### v1.7.1 - Product Type Scan Filter Fix - Completed
+
+Focus: make dashboard Product Types control search queries and current scan results.
+
+- Expanded selected product types into focused dashboard scan queries.
+- Scanned only the selected dashboard marketplace platforms.
+- Normalized result product types from product titles.
+- Filtered current dashboard scan results by selected product type.
+- Kept the SQLite schema unchanged.
+
 ### v1.6.1 - eBay End-to-End Debug Verification - Completed
 
 Focus: make it easy to prove that eBay Browse API results flow through the CLI, SQLite database, and dashboard output.

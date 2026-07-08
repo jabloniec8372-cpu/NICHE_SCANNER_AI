@@ -10,6 +10,7 @@ DEFAULT_PRODUCT = {
     "shop_name": "",
     "shop_url": "",
     "currency": "",
+    "product_type": "",
 }
 
 
